@@ -2104,8 +2104,27 @@ function renderPlannerMetrics(){
   }
 }
 
+/* ---- JUMP TO TAB HELPER ---- */
+window.jumpToTab = function(tabName){
+  const btn = suiteNav.querySelector(`[data-tab="${tabName}"]`);
+  if(btn) btn.click();
+};
+
 /* ---- INIT ---- */
-function renderAll(){renderClockStrip();renderGrid();renderUpcomingList();renderPartnerAvail();updateQuickLinks();syncViewBtns();renderPlannerMetrics();}
+function renderAll(){
+  renderClockStrip();
+  renderGrid();
+  renderUpcomingList();
+  renderPartnerAvail();
+  updateQuickLinks();
+  syncViewBtns();
+  renderPlannerMetrics();
+  renderTrackerView();
+  renderPlaybookView();
+  renderHubView();
+  renderPlatformGrid();
+  renderGmailPanel();
+}
 function init(){
   buildQACatChips();renderAll();updateQuickLinks();
   setInterval(()=>{renderClockStrip();renderPartnerAvail();},15000);
