@@ -517,6 +517,86 @@ tbody td{padding:.7rem .9rem;font-size:.76rem;}
 
       </div>
     </div>
+
+    <!-- PLANNER METRICS & PERFORMANCE PANEL -->
+    <div class="panel" style="padding:1.4rem;margin-top:1.2rem;" id="plannerMetricsPanel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:.8rem;">
+        <div style="display:flex;align-items:center;gap:.7rem;">
+          <span class="i3d i3d-md i3d-blue"><i class="fa-solid fa-chart-line"></i></span>
+          <div>
+            <h3 style="font-family:'Space Grotesk';font-size:1.15rem;" class="gradient-text">Planner Metrics &amp; Performance Analytics</h3>
+            <p style="font-size:.74rem;color:var(--text-mute);">Meeting frequencies, warm-up/cool-down buffers, contact velocity &amp; focus balance.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:.35rem;" id="metricsRangeBtns">
+          <button class="btn btn-ghost btn-sm active" id="btnMetricsRangeWeek">This Week</button>
+          <button class="btn btn-ghost btn-sm" id="btnMetricsRangeAll">All Time</button>
+        </div>
+      </div>
+
+      <!-- KPI Grid -->
+      <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.9rem;margin-bottom:1.3rem;">
+        <div class="stat-card">
+          <span class="i3d i3d-sm i3d-blue"><i class="fa-solid fa-calendar-check"></i></span>
+          <div>
+            <div class="sc-num" id="pmTotalMeetings">0</div>
+            <div class="sc-label">Total Meetings (<span id="pmTotalHours">0h</span>)</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="i3d i3d-sm i3d-orange"><i class="fa-solid fa-fire"></i></span>
+          <div>
+            <div class="sc-num" id="pmAvgWarmup">15m</div>
+            <div class="sc-label">Avg. Warm-Up Prep Time</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="i3d i3d-sm i3d-green"><i class="fa-solid fa-snowflake"></i></span>
+          <div>
+            <div class="sc-num" id="pmAvgCooldown">20m</div>
+            <div class="sc-label">Avg. Cool-Down Buffer</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="i3d i3d-sm i3d-purple"><i class="fa-solid fa-user-group"></i></span>
+          <div>
+            <div class="sc-num" id="pmTopPartner" style="font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">—</div>
+            <div class="sc-label">Top Contact Partner</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts & Analysis Row -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.1rem;margin-bottom:1rem;">
+        <!-- Chart 1: Meeting Density -->
+        <div style="background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;padding:1.1rem;">
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;">
+            <i class="fa-solid fa-chart-simple" style="color:var(--blue);font-size:.9rem;"></i>
+            <b style="font-size:.85rem;font-family:'Space Grotesk';">Meeting Frequency by Day</b>
+          </div>
+          <div style="height:220px;position:relative;"><canvas id="plannerDensityChartCanvas"></canvas></div>
+        </div>
+
+        <!-- Chart 2: Buffer & Time Distribution -->
+        <div style="background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;padding:1.1rem;">
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;">
+            <i class="fa-solid fa-chart-pie" style="color:var(--purple);font-size:.9rem;"></i>
+            <b style="font-size:.85rem;font-family:'Space Grotesk';">Time Ratios (Meetings vs Buffers vs Deep Work)</b>
+          </div>
+          <div style="height:220px;position:relative;"><canvas id="plannerBufferChartCanvas"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Smart Insights & Buffer Recommendations -->
+      <div class="overlap-callout" style="margin-top:.4rem;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(139,92,246,.06));border-color:rgba(59,130,246,.25);">
+        <div class="ov-label" style="color:var(--blue);display:flex;align-items:center;gap:.4rem;">
+          <i class="fa-solid fa-brain" style="color:var(--purple);"></i> Schedule Pace &amp; Health Insights
+        </div>
+        <div style="font-size:.78rem;color:var(--text-dim);line-height:1.55;margin-top:.35rem;" id="plannerSmartInsightText">
+          Calculating schedule buffers and meeting frequencies…
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- TAB 2: GROWTH TRACKER -->
@@ -1877,8 +1957,196 @@ document.getElementById('btnExportJson').addEventListener('click',()=>{const blo
 document.getElementById('jsonImportInput').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();location.reload();}catch(ex){alert('Invalid file.');}};r.readAsText(f);});
 document.getElementById('btnResetAll').addEventListener('click',()=>{if(!confirm('Reset ALL data?'))return;localStorage.removeItem(LS_KEY);location.reload();});
 
+/* ---- PLANNER METRICS & PERFORMANCE ANALYTICS ---- */
+let plannerDensityChart = null, plannerBufferChart = null;
+let metricsRangeMode = 'week';
+
+document.getElementById('btnMetricsRangeWeek')?.addEventListener('click', ()=>{
+  metricsRangeMode = 'week';
+  document.getElementById('btnMetricsRangeWeek')?.classList.add('active');
+  document.getElementById('btnMetricsRangeAll')?.classList.remove('active');
+  renderPlannerMetrics();
+});
+document.getElementById('btnMetricsRangeAll')?.addEventListener('click', ()=>{
+  metricsRangeMode = 'all';
+  document.getElementById('btnMetricsRangeAll')?.classList.add('active');
+  document.getElementById('btnMetricsRangeWeek')?.classList.remove('active');
+  renderPlannerMetrics();
+});
+
+function renderPlannerMetrics(){
+  const events = state.events || [];
+  const now = new Date();
+  
+  const filteredEvents = events.filter(ev => {
+    if(metricsRangeMode === 'all') return true;
+    const dates = visibleDates();
+    return dates.includes(ev.date);
+  });
+
+  const meetings = filteredEvents.filter(ev => ev.category === 'meeting' || ev.collaboratorId);
+  const totalMeetings = meetings.length;
+  
+  let totalMeetingMins = 0;
+  meetings.forEach(ev => {
+    const dur = Math.max(15, minutesOf(ev.end) - minutesOf(ev.start));
+    totalMeetingMins += dur;
+  });
+
+  const totalHoursStr = (totalMeetingMins / 60).toFixed(1) + 'h';
+  const pmMeetingsEl = document.getElementById('pmTotalMeetings');
+  const pmHoursEl = document.getElementById('pmTotalHours');
+  if(pmMeetingsEl) pmMeetingsEl.textContent = totalMeetings;
+  if(pmHoursEl) pmHoursEl.textContent = totalHoursStr;
+
+  // Calculate Warm-up and Cool-down buffers between consecutive events
+  const eventsByDay = {};
+  filteredEvents.forEach(ev => {
+    eventsByDay[ev.date] = eventsByDay[ev.date] || [];
+    eventsByDay[ev.date].push(ev);
+  });
+
+  let warmupGaps = [], cooldownGaps = [];
+  Object.values(eventsByDay).forEach(dayEvs => {
+    dayEvs.sort((a,b) => minutesOf(a.start) - minutesOf(b.start));
+    for(let i=0; i<dayEvs.length; i++){
+      const curr = dayEvs[i];
+      if(curr.category === 'meeting' || curr.collaboratorId){
+        if(i > 0){
+          const prev = dayEvs[i-1];
+          const gap = minutesOf(curr.start) - minutesOf(prev.end);
+          if(gap >= 0 && gap <= 120) warmupGaps.push(gap);
+        } else {
+          warmupGaps.push(20);
+        }
+        if(i < dayEvs.length - 1){
+          const next = dayEvs[i+1];
+          const gap = minutesOf(next.start) - minutesOf(curr.end);
+          if(gap >= 0 && gap <= 120) cooldownGaps.push(gap);
+        } else {
+          cooldownGaps.push(15);
+        }
+      }
+    }
+  });
+
+  const avgWarmup = warmupGaps.length ? Math.round(warmupGaps.reduce((a,b)=>a+b,0)/warmupGaps.length) : 15;
+  const avgCooldown = cooldownGaps.length ? Math.round(cooldownGaps.reduce((a,b)=>a+b,0)/cooldownGaps.length) : 20;
+
+  const pmWarmupEl = document.getElementById('pmAvgWarmup');
+  const pmCooldownEl = document.getElementById('pmAvgCooldown');
+  if(pmWarmupEl) pmWarmupEl.textContent = avgWarmup + 'm';
+  if(pmCooldownEl) pmCooldownEl.textContent = avgCooldown + 'm';
+
+  // Find top contact partner by meeting frequency
+  const partnerCounts = {};
+  meetings.forEach(ev => {
+    if(ev.collaboratorId){
+      partnerCounts[ev.collaboratorId] = (partnerCounts[ev.collaboratorId] || 0) + 1;
+    }
+  });
+  let topPartnerId = null, maxCount = 0;
+  for(const id in partnerCounts){
+    if(partnerCounts[id] > maxCount){
+      maxCount = partnerCounts[id];
+      topPartnerId = id;
+    }
+  }
+  const topPartner = state.clocks.find(c => c.id === topPartnerId);
+  const pmTopPartnerEl = document.getElementById('pmTopPartner');
+  if(pmTopPartnerEl) pmTopPartnerEl.textContent = topPartner ? topPartner.name : (totalMeetings ? 'General Client' : '—');
+
+  // Chart 1: Meeting Density by Day of Week
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const dayCounts = [0,0,0,0,0,0,0];
+  filteredEvents.forEach(ev => {
+    const d = new Date(ev.date + 'T12:00:00');
+    const wd = (d.getDay() + 6) % 7;
+    if(ev.category === 'meeting' || ev.collaboratorId) dayCounts[wd]++;
+  });
+
+  if(plannerDensityChart) plannerDensityChart.destroy();
+  const ctx1 = document.getElementById('plannerDensityChartCanvas')?.getContext('2d');
+  if(ctx1){
+    plannerDensityChart = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels: days,
+        datasets: [{
+          label: 'Meetings Scheduled',
+          data: dayCounts,
+          backgroundColor: 'rgba(59,130,246,.65)',
+          borderColor: '#3B82F6',
+          borderWidth: 1.5,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,.03)' }, ticks: { color: 'var(--text-mute)' } },
+          y: { beginAtZero: true, stepSize: 1, grid: { color: 'rgba(255,255,255,.03)' }, ticks: { color: 'var(--text-mute)' } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  // Chart 2: Time Ratios (Meeting vs Warmup vs Cooldown vs Deep Work)
+  let deepWorkMins = 0;
+  filteredEvents.filter(ev => ev.category !== 'meeting' && !ev.collaboratorId).forEach(ev => {
+    deepWorkMins += Math.max(15, minutesOf(ev.end) - minutesOf(ev.start));
+  });
+
+  if(plannerBufferChart) plannerBufferChart.destroy();
+  const ctx2 = document.getElementById('plannerBufferChartCanvas')?.getContext('2d');
+  if(ctx2){
+    plannerBufferChart = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: ['Meeting Time', 'Warm-Up Prep', 'Cool-Down Buffer', 'Deep Work / Admin'],
+        datasets: [{
+          data: [
+            totalMeetingMins || 60,
+            avgWarmup * (totalMeetings || 1),
+            avgCooldown * (totalMeetings || 1),
+            deepWorkMins || 120
+          ],
+          backgroundColor: ['#3B82F6', '#F59E0B', '#10B981', '#8B5CF6'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { color: 'var(--text-dim)', font: { size: 11 } } }
+        }
+      }
+    });
+  }
+
+  // Smart Insights Generation
+  const ins = document.getElementById('plannerSmartInsightText');
+  if(ins){
+    let insightHtml = '';
+    if(avgCooldown >= 15){
+      insightHtml += `<b><i class="fa-solid fa-circle-check" style="color:var(--green);margin-right:.3rem;"></i>Optimal Recovery Pace:</b> You maintain an average of <b>${avgCooldown} mins</b> cool-down buffer post-meeting. This prevents fatigue and ensures notes are logged. `;
+    } else {
+      insightHtml += `<b><i class="fa-solid fa-circle-exclamation" style="color:var(--orange);margin-right:.3rem;"></i>Tight Buffer Warning:</b> Your average cool-down between sessions is <b>${avgCooldown} mins</b>. Consider scheduling a 15m buffer block after client strategy sessions. `;
+    }
+    if(totalMeetings > 0){
+      insightHtml += `<br><b><i class="fa-solid fa-chart-line" style="color:var(--blue);margin-right:.3rem;"></i>Contact Velocity:</b> Most active with <b>${topPartner ? topPartner.name : 'client sessions'}</b> (${totalMeetings} sessions scheduled).`;
+    } else {
+      insightHtml += `<br><b><i class="fa-solid fa-lightbulb" style="color:var(--gold);margin-right:.3rem;"></i>Pro Tip:</b> Schedule your first partner meeting or time block above to activate live velocity metrics.`;
+    }
+    ins.innerHTML = insightHtml;
+  }
+}
+
 /* ---- INIT ---- */
-function renderAll(){renderClockStrip();renderGrid();renderUpcomingList();renderPartnerAvail();updateQuickLinks();syncViewBtns();}
+function renderAll(){renderClockStrip();renderGrid();renderUpcomingList();renderPartnerAvail();updateQuickLinks();syncViewBtns();renderPlannerMetrics();}
 function init(){
   buildQACatChips();renderAll();updateQuickLinks();
   setInterval(()=>{renderClockStrip();renderPartnerAvail();},15000);
