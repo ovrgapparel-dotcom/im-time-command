@@ -468,30 +468,110 @@ tbody td{padding:.7rem .9rem;font-size:.76rem;}
       <div style="display:flex;flex-direction:column;gap:.9rem;min-width:0;">
         <!-- Calendar grid -->
         <div class="panel agenda-panel">
-        <div class="agenda-toolbar">
-          <div class="navgroup">
-            <button class="icon-btn" id="btnPrev"><i class="fa-solid fa-chevron-left"></i></button>
-            <div class="date-range" id="dateRange">—</div>
-            <button class="icon-btn" id="btnNext"><i class="fa-solid fa-chevron-right"></i></button>
-            <button class="btn btn-ghost btn-sm" id="btnToday">Today</button>
+          <div class="agenda-toolbar">
+            <div class="navgroup">
+              <button class="icon-btn" id="btnPrev"><i class="fa-solid fa-chevron-left"></i></button>
+              <div class="date-range" id="dateRange">—</div>
+              <button class="icon-btn" id="btnNext"><i class="fa-solid fa-chevron-right"></i></button>
+              <button class="btn btn-ghost btn-sm" id="btnToday">Today</button>
+            </div>
+            <div class="view-toggle">
+              <button id="viewDayBtn">Day</button>
+              <button id="viewWeekBtn" class="active">Week</button>
+            </div>
+            <div style="display:flex;gap:.3rem;flex-wrap:wrap;">
+              <button class="btn btn-ghost btn-sm" id="btnIcsExport"><i class="fa-solid fa-file-arrow-down"></i> .ics</button>
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer;"><i class="fa-solid fa-file-arrow-up"></i> Import<input type="file" id="icsImportInput" accept=".ics" style="display:none;"></label>
+              <button class="btn btn-primary btn-sm" id="btnNewBlock"><i class="fa-solid fa-plus"></i> Block</button>
+            </div>
           </div>
-          <div class="view-toggle">
-            <button id="viewDayBtn">Day</button>
-            <button id="viewWeekBtn" class="active">Week</button>
+          <div class="grid-scroll"><div class="grid-wrap"><div class="time-gutter" id="timeGutter"></div><div class="days-cols" id="daysCols"></div></div></div>
+          <div class="help-note"><i class="fa-solid fa-circle-info" style="color:var(--blue);margin-right:.35rem;"></i>Drag block to move &nbsp;·&nbsp; <b>Ctrl/⌘ + drag</b> to duplicate &nbsp;·&nbsp; drag bottom edge to resize &nbsp;·&nbsp; click empty slot to create</div>
+        </div>
+
+        <!-- PLANNER METRICS & PERFORMANCE PANEL -->
+        <div class="panel" style="padding:1.4rem;" id="plannerMetricsPanel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:.8rem;">
+            <div style="display:flex;align-items:center;gap:.7rem;">
+              <span class="i3d i3d-md i3d-blue"><i class="fa-solid fa-chart-line"></i></span>
+              <div>
+                <h3 style="font-family:'Space Grotesk';font-size:1.15rem;" class="gradient-text">Planner Metrics &amp; Performance Analytics</h3>
+                <p style="font-size:.74rem;color:var(--text-mute);">Meeting frequencies, warm-up/cool-down buffers, contact velocity &amp; focus balance.</p>
+              </div>
+            </div>
+            <div style="display:flex;gap:.35rem;" id="metricsRangeBtns">
+              <button class="btn btn-ghost btn-sm active" id="btnMetricsRangeWeek">This Week</button>
+              <button class="btn btn-ghost btn-sm" id="btnMetricsRangeAll">All Time</button>
+            </div>
           </div>
-          <div style="display:flex;gap:.3rem;flex-wrap:wrap;">
-            <button class="btn btn-ghost btn-sm" id="btnIcsExport"><i class="fa-solid fa-file-arrow-down"></i> .ics</button>
-            <label class="btn btn-ghost btn-sm" style="cursor:pointer;"><i class="fa-solid fa-file-arrow-up"></i> Import<input type="file" id="icsImportInput" accept=".ics" style="display:none;"></label>
-            <button class="btn btn-primary btn-sm" id="btnNewBlock"><i class="fa-solid fa-plus"></i> Block</button>
+
+          <!-- KPI Grid -->
+          <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.9rem;margin-bottom:1.3rem;">
+            <div class="stat-card">
+              <span class="i3d i3d-sm i3d-blue"><i class="fa-solid fa-calendar-check"></i></span>
+              <div>
+                <div class="sc-num" id="pmTotalMeetings">0</div>
+                <div class="sc-label">Total Meetings (<span id="pmTotalHours">0h</span>)</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="i3d i3d-sm i3d-orange"><i class="fa-solid fa-fire"></i></span>
+              <div>
+                <div class="sc-num" id="pmAvgWarmup">15m</div>
+                <div class="sc-label">Avg. Warm-Up Prep Time</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="i3d i3d-sm i3d-green"><i class="fa-solid fa-snowflake"></i></span>
+              <div>
+                <div class="sc-num" id="pmAvgCooldown">20m</div>
+                <div class="sc-label">Avg. Cool-Down Buffer</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="i3d i3d-sm i3d-purple"><i class="fa-solid fa-user-group"></i></span>
+              <div>
+                <div class="sc-num" id="pmTopPartner" style="font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">—</div>
+                <div class="sc-label">Top Contact Partner</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts & Analysis Row -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.1rem;margin-bottom:1rem;">
+            <!-- Chart 1: Meeting Density -->
+            <div style="background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;padding:1.1rem;">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;">
+                <i class="fa-solid fa-chart-simple" style="color:var(--blue);font-size:.9rem;"></i>
+                <b style="font-size:.85rem;font-family:'Space Grotesk';">Meeting Frequency by Day</b>
+              </div>
+              <div style="height:220px;position:relative;"><canvas id="plannerDensityChartCanvas"></canvas></div>
+            </div>
+
+            <!-- Chart 2: Buffer & Time Distribution -->
+            <div style="background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;padding:1.1rem;">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;">
+                <i class="fa-solid fa-chart-pie" style="color:var(--purple);font-size:.9rem;"></i>
+                <b style="font-size:.85rem;font-family:'Space Grotesk';">Time Ratios (Meetings vs Buffers vs Deep Work)</b>
+              </div>
+              <div style="height:220px;position:relative;"><canvas id="plannerBufferChartCanvas"></canvas></div>
+            </div>
+          </div>
+
+          <!-- Smart Insights & Buffer Recommendations -->
+          <div class="overlap-callout" style="margin-top:.4rem;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(139,92,246,.06));border-color:rgba(59,130,246,.25);">
+            <div class="ov-label" style="color:var(--blue);display:flex;align-items:center;gap:.4rem;">
+              <i class="fa-solid fa-brain" style="color:var(--purple);"></i> Schedule Pace &amp; Health Insights
+            </div>
+            <div style="font-size:.78rem;color:var(--text-dim);line-height:1.55;margin-top:.35rem;" id="plannerSmartInsightText">
+              Calculating schedule buffers and meeting frequencies…
+            </div>
           </div>
         </div>
-        <div class="grid-scroll"><div class="grid-wrap"><div class="time-gutter" id="timeGutter"></div><div class="days-cols" id="daysCols"></div></div></div>
-        <div class="help-note"><i class="fa-solid fa-circle-info" style="color:var(--blue);margin-right:.35rem;"></i>Drag block to move &nbsp;·&nbsp; <b>Ctrl/⌘ + drag</b> to duplicate &nbsp;·&nbsp; drag bottom edge to resize &nbsp;·&nbsp; click empty slot to create</div>
       </div>
 
-      <!-- Planner Sidebar -->
+      <!-- Right Column (Planner Sidebar) -->
       <div class="planner-sidebar" id="plannerSidebar">
-
         <!-- Quick Add -->
         <div class="panel ps-card">
           <div class="ps-title">
@@ -543,20 +623,11 @@ tbody td{padding:.7rem .9rem;font-size:.76rem;}
             <a href="#" class="ql-btn" id="qlCalendly" target="_blank"><span class="ql-icon i3d i3d-sm" style="background:linear-gradient(145deg,#4a6cf7,#2e4cdd);box-shadow:2px 3px 8px rgba(74,108,247,.4);color:#fff;font-size:.7rem;font-weight:700;">Ca</span>Calendly</a>
             <button class="ql-btn" id="qlNewEvent"><span class="ql-icon i3d i3d-sm i3d-blue"><i class="fa-solid fa-calendar-plus"></i></span>New Event</button>
             <button class="ql-btn" id="qlExportIcs"><span class="ql-icon i3d i3d-sm i3d-slate"><i class="fa-solid fa-file-export"></i></span>Export .ics</button>
-        <!-- Smart Insights & Buffer Recommendations -->
-        <div class="overlap-callout" style="margin-top:.4rem;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(139,92,246,.06));border-color:rgba(59,130,246,.25);">
-          <div class="ov-label" style="color:var(--blue);display:flex;align-items:center;gap:.4rem;">
-            <i class="fa-solid fa-brain" style="color:var(--purple);"></i> Schedule Pace &amp; Health Insights
-          </div>
-          <div style="font-size:.78rem;color:var(--text-dim);line-height:1.55;margin-top:.35rem;" id="plannerSmartInsightText">
-            Calculating schedule buffers and meeting frequencies…
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Right Column (Planner Sidebar) -->
-    <div class="planner-sidebar" id="plannerSidebar">
+  </div>
 
   <!-- TAB 2: GROWTH TRACKER -->
   <div class="tab-view" id="viewTracker">
