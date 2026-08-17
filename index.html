@@ -1397,7 +1397,8 @@ function renderDirectoryList(query){
         <span class="cc-status ${st.cls}">${st.label}</span>
       </div>
       ${contactBtns ? `<div style="width:100%;margin-top:.2rem;"><div class="pa-contacts">${contactBtns}</div></div>` : ''}
-      <div style="display:flex;gap:.35rem;margin-left:auto;">
+      <div style="display:flex;gap:.35rem;margin-left:auto;align-items:center;">
+        <button class="btn btn-primary btn-sm" onclick="scheduleWithContact('${c.id}')"><i class="fa-solid fa-calendar-plus"></i> Schedule Meeting</button>
         <button class="btn btn-ghost btn-sm" onclick="editFromDir('${c.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
         <button class="btn btn-ghost btn-sm" onclick="deleteFromDir('${c.id}')" style="color:var(--red);"><i class="fa-solid fa-trash"></i></button>
       </div>
@@ -1473,13 +1474,17 @@ document.getElementById('btnExportContactsCsv')?.addEventListener('click', () =>
 
 /* ---- PARTNER AVAILABILITY (in Planner Sidebar) ---- */
 function buildContactButtons(clock){
-  if(!clock.contacts||!clock.contacts.length)return '';
-  return clock.contacts.map(m=>{
-    const ct=CONTACT_TYPES.find(t=>t.id===m.type)||CONTACT_TYPES[0];
-    const href=ct.url(m.value);
-    const isExternal=href.startsWith('http')||href.startsWith('mailto')||href.startsWith('tel')||href.startsWith('sms');
-    return`<a href="${escapeHtml(href)}" ${isExternal?'target="_blank" rel="noopener"':''} class="pa-contact-btn" style="--ch-bg:${ct.hbg};--ch-col:${ct.hcol};" title="${escapeHtml(ct.label)}: ${escapeHtml(m.value)}"><i class="fa-solid ${ct.icon}" style="color:${ct.color};font-size:.7rem;"></i>${escapeHtml(ct.label)}</a>`;
-  }).join('');
+  const btns = [];
+  btns.push(`<button class="pa-contact-btn" style="--ch-bg:rgba(59,130,246,.25);--ch-col:var(--blue);" onclick="scheduleWithContact('${clock.id}')" title="Schedule meeting with ${escapeHtml(clock.name)}"><i class="fa-solid fa-calendar-plus" style="color:var(--blue);font-size:.7rem;"></i>Schedule</button>`);
+  if(clock.contacts && clock.contacts.length){
+    clock.contacts.forEach(m=>{
+      const ct=CONTACT_TYPES.find(t=>t.id===m.type)||CONTACT_TYPES[0];
+      const href=ct.url(m.value);
+      const isExternal=href.startsWith('http')||href.startsWith('mailto')||href.startsWith('tel')||href.startsWith('sms');
+      btns.push(`<a href="${escapeHtml(href)}" ${isExternal?'target="_blank" rel="noopener"':''} class="pa-contact-btn" style="--ch-bg:${ct.hbg};--ch-col:${ct.hcol};" title="${escapeHtml(ct.label)}: ${escapeHtml(m.value)}"><i class="fa-solid ${ct.icon}" style="color:${ct.color};font-size:.7rem;"></i>${escapeHtml(ct.label)}</a>`);
+    });
+  }
+  return btns.join('');
 }
 function renderPartnerAvail(){
   const list=document.getElementById('partnerAvailList');
@@ -1577,17 +1582,40 @@ function wireDayBodyDrag(body){let dragging=false,startY=0,ghost=null;body.addEv
 function wireEventBlock(block,ev){let mode=null,startY=0,origTop=0,origH=0,startBody=null;const handle=block.querySelector('.resize-handle');block.addEventListener('pointerdown',e=>{if(e.target===handle)return;mode='move';startY=e.clientY;origTop=parseFloat(block.style.top);origH=parseFloat(block.style.height);startBody=block.parentElement;block.classList.add('dragging');block.setPointerCapture(e.pointerId);e.stopPropagation();});handle.addEventListener('pointerdown',e=>{mode='resize';startY=e.clientY;origH=parseFloat(block.style.height);origTop=parseFloat(block.style.top);block.setPointerCapture(e.pointerId);e.stopPropagation();});block.addEventListener('pointermove',e=>{if(!mode)return;const dy=e.clientY-startY;const snap=15*PX_MIN;if(mode==='resize')block.style.height=Math.max(snap,Math.round((origH+dy)/snap)*snap)+'px';else{block.style.top=Math.max(0,Math.round((origTop+dy)/snap)*snap)+'px';const el=document.elementFromPoint(e.clientX,e.clientY);const ob=el?el.closest('.day-body'):null;document.querySelectorAll('.day-body.dragover').forEach(d=>d.classList.remove('dragover'));if(ob)ob.classList.add('dragover');}});block.addEventListener('pointerup',e=>{if(!mode)return;document.querySelectorAll('.day-body.dragover').forEach(d=>d.classList.remove('dragover'));block.classList.remove('dragging');if(mode==='resize'){const hMin=parseFloat(block.style.height)/PX_MIN;const sMin=GRID_SH*60+origTop/PX_MIN;const ev2=state.events.find(e=>e.id===block.dataset.evId);if(ev2){ev2.end=minutesToTime(sMin+hMin);save();}}else if(mode==='move'){const el=document.elementFromPoint(e.clientX,e.clientY);const ob=el?el.closest('.day-body'):startBody;const nd=ob?ob.dataset.date:ev.date;const tMin=parseFloat(block.style.top)/PX_MIN;const dur=origH/PX_MIN;const ns=minutesToTime(GRID_SH*60+tMin),ne=minutesToTime(GRID_SH*60+tMin+dur);if(e.ctrlKey||e.metaKey)duplicateEvent(ev,nd,ns,ne);else{const t=state.events.find(x=>x.id===ev.id);if(t){t.date=nd;t.start=ns;t.end=ne;save();}}}mode=null;renderAll();});block.addEventListener('click',e=>{if(block.classList.contains('dragging'))return;openEventModal(ev);});}
 function duplicateEvent(ev,date,start,end){const copy=JSON.parse(JSON.stringify(ev));copy.id=uid();copy.date=date;copy.start=start;copy.end=end;copy.repeat={type:'none',days:[],until:null};state.events.push(copy);save();toast('Duplicated',`Copy of "${ev.title}" created.`,'success');}
 
+/* ---- SCHEDULE WITH CONTACT ---- */
+window.scheduleWithContact = function(collabId){
+  const c = state.clocks.find(x => x.id === collabId);
+  if(!c) return;
+  document.getElementById('directoryOverlay')?.classList.remove('show');
+
+  const agendaTabBtn = suiteNav.querySelector('[data-tab="agenda"]');
+  if(agendaTabBtn) agendaTabBtn.click();
+
+  const defaultStart = c.workStart || '09:00';
+  const defaultEnd = minutesToTime(minutesOf(defaultStart) + 30);
+
+  openEventModal(null, state.view.anchor || todayStr(), defaultStart, defaultEnd, c.id);
+  
+  const titleInp = document.getElementById('evTitle');
+  if(!titleInp.value) titleInp.value = `Strategy Session — ${c.name}`;
+  titleInp.focus();
+
+  toast('Meeting Scheduler', `Scheduling with ${c.name} (${friendlyTz(c.tz)})`, 'info');
+};
+
 /* ---- EVENT MODAL ---- */
 let evNotes=[],evRepType='none',evRepDays=[];
 function buildCategoryChips(container,selected){container.innerHTML=CATEGORIES.map(c=>`<button type="button" data-v="${c.id}" style="--sel:${c.color}" class="${c.id===selected?'active':''}">${c.label}</button>`).join('');container.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{container.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');}));}
 function populateCollaboratorSelect(){document.getElementById('evCollaborator').innerHTML='<option value="">— none —</option>'+state.clocks.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');}
-function openEventModal(ev,pd,ps,pe){
+function openEventModal(ev,pd,ps,pe,presetCollabId){
   populateCollaboratorSelect();document.getElementById('eventModalTitle').textContent=ev?'Edit Time Block':'New Time Block';
   document.getElementById('evId').value=ev?ev.id:'';document.getElementById('evTitle').value=ev?ev.title:'';document.getElementById('evDate').value=ev?ev.date:(pd||todayStr());
   document.getElementById('evStart').value=ev?ev.start:(ps||'09:00');document.getElementById('evEnd').value=ev?ev.end:(pe||'09:30');
   document.getElementById('evLink').value=ev?ev.link||'':'';
   buildCategoryChips(document.getElementById('evCategory'),ev?ev.category:'meeting');
-  document.getElementById('evCollaborator').value=ev?(ev.collaboratorId||''):'';updateCollabPreview();
+  const cid = ev ? (ev.collaboratorId || '') : (presetCollabId || '');
+  document.getElementById('evCollaborator').value = cid;
+  updateCollabPreview();
   ['evCollaborator','evDate','evStart','evEnd'].forEach(id=>document.getElementById(id).oninput=updateCollabPreview);
   evRepType=ev?.repeat?.type||'none';evRepDays=ev?.repeat?.days?ev.repeat.days.slice():[];
   const rw=document.getElementById('evRepeatType');rw.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.getAttribute('data-v')===evRepType));
