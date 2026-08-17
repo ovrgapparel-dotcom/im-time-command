@@ -1,0 +1,9 @@
+{
+  "name": "im-time-command",
+  "version": "3.0.0",
+  "description": "Global Entrepreneur Suite — Time Command, Messaging Hub & Growth Tracker",
+  "main": "index.html",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
