@@ -795,6 +795,34 @@ tbody td{padding:.7rem .9rem;font-size:.76rem;}
   </div>
 </div>
 
+<!-- COLLABORATOR & CLIENT DIRECTORY MODAL -->
+<div class="overlay" id="directoryOverlay">
+  <div class="panel modal wide" style="max-width:720px;">
+    <button class="close" data-close="directoryOverlay">✕</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;gap:.6rem;">
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <span class="i3d i3d-sm i3d-blue"><i class="fa-solid fa-users-gear"></i></span>
+        <div>
+          <h3 style="font-family:'Space Grotesk';">Collaborator &amp; Client Directory</h3>
+          <p class="sub" style="margin-bottom:0;" id="directorySubCount">0 Contacts</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
+        <label class="btn btn-success btn-sm" style="margin:0;cursor:pointer;">
+          <i class="fa-solid fa-file-import"></i> Import CSV / VCF
+          <input type="file" id="contactsImportInput" accept=".csv,.vcf,.vcard" style="display:none;">
+        </label>
+        <button class="btn btn-ghost btn-sm" id="btnExportContactsCsv"><i class="fa-solid fa-file-export"></i> Export CSV</button>
+        <button class="btn btn-primary btn-sm" id="btnAddPartnerFromDir"><i class="fa-solid fa-user-plus"></i> Add Contact</button>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:.8rem;">
+      <input type="text" id="dirSearchInput" placeholder="Search contacts by name, role, timezone, city, email, or phone…">
+    </div>
+    <div id="directoryListGrid" style="display:flex;flex-direction:column;gap:.5rem;max-height:420px;overflow-y:auto;padding-right:.2rem;"></div>
+  </div>
+</div>
+
 <!-- CLOCK MODAL -->
 <div class="overlay" id="clockOverlay">
   <div class="panel modal">
@@ -1173,8 +1201,10 @@ function renderClockStrip(){
     chip.addEventListener('click',()=>openClockModal(clock));
     strip.appendChild(chip);
   });
-  // Add button
-  if(state.clocks.length<4){const addBtn=document.createElement('button');addBtn.className='add-collab-chip';addBtn.innerHTML=`<i class="fa-solid fa-plus"></i> Add Partner`;addBtn.disabled=state.clocks.length>=4;addBtn.addEventListener('click',()=>openClockModal(null));strip.appendChild(addBtn);}
+  // Add contact button
+  const addBtn=document.createElement('button');addBtn.className='add-collab-chip';addBtn.innerHTML=`<i class="fa-solid fa-user-plus"></i> Add Contact`;addBtn.addEventListener('click',()=>openClockModal(null));strip.appendChild(addBtn);
+  // Directory & Import button
+  const dirBtn=document.createElement('button');dirBtn.className='add-collab-chip';dirBtn.style.borderColor='var(--blue)';dirBtn.style.color='var(--blue)';dirBtn.innerHTML=`<i class="fa-solid fa-address-book"></i> Directory (${state.clocks.length})`;dirBtn.addEventListener('click',openDirectoryModal);strip.appendChild(dirBtn);
 }
 
 /* ---- CONTACT METHODS EDITOR ---- */
@@ -1234,10 +1264,212 @@ document.getElementById('btnSaveClock').addEventListener('click',()=>{
   const tz=resolveTz(tzInp.value, tzInp.dataset.tz);
   const id=document.getElementById('clockId').value||uid();
   const clock={id,name:document.getElementById('clockName').value.trim()||'Partner',role:document.getElementById('clockRole').value.trim(),tz,workStart:document.getElementById('clockWorkStart').value||'09:00',workEnd:document.getElementById('clockWorkEnd').value||'17:00',workDays:editClockDays.length?editClockDays:[1,2,3,4,5],color:document.getElementById('clockColor').value,contacts:editContactMethods.filter(m=>m.value.trim())};
-  const idx=state.clocks.findIndex(c=>c.id===id);if(idx>-1)state.clocks[idx]=clock;else{if(state.clocks.length>=4){toast('Max 4 clocks','Up to 4 partner time zones.','warn');return;}state.clocks.push(clock);}
+  const idx=state.clocks.findIndex(c=>c.id===id);if(idx>-1)state.clocks[idx]=clock;else state.clocks.push(clock);
   save();document.getElementById('clockOverlay').classList.remove('show');renderAll();
 });
 document.getElementById('btnDeleteClock').addEventListener('click',()=>{const id=document.getElementById('clockId').value;if(!confirm('Remove this collaborator?'))return;state.clocks=state.clocks.filter(c=>c.id!==id);save();document.getElementById('clockOverlay').classList.remove('show');renderAll();});
+
+/* ---- CONTACT DIRECTORY & CSV/VCF IMPORT/EXPORT ---- */
+function parseCsvContacts(text){
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if(!lines.length) return [];
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+  const nameIdx = headers.findIndex(h => h.includes('name'));
+  const roleIdx = headers.findIndex(h => h.includes('role') || h.includes('title') || h.includes('company') || h.includes('org'));
+  const tzIdx = headers.findIndex(h => h.includes('tz') || h.includes('timezone') || h.includes('city') || h.includes('country') || h.includes('location'));
+  const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('tel') || h.includes('mobile'));
+  const emailIdx = headers.findIndex(h => h.includes('email') || h.includes('mail'));
+  const waIdx = headers.findIndex(h => h.includes('whatsapp') || h.includes('wa'));
+  const msgIdx = headers.findIndex(h => h.includes('messenger'));
+  const liIdx = headers.findIndex(h => h.includes('linkedin'));
+
+  const results = [];
+  for(let i=1; i<lines.length; i++){
+    const row = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g)?.map(v => v.trim().replace(/^["']|["']$/g, '')) || lines[i].split(',').map(v => v.trim());
+    if(!row.length) continue;
+    const name = nameIdx > -1 ? row[nameIdx] : row[0];
+    if(!name || name.toLowerCase() === 'name') continue;
+    const role = roleIdx > -1 ? row[roleIdx] : '';
+    const tzRaw = tzIdx > -1 ? row[tzIdx] : '';
+    const tz = resolveTz(tzRaw, '');
+    const contacts = [];
+    if(phoneIdx > -1 && row[phoneIdx]) contacts.push({type:'phone', value:row[phoneIdx]});
+    if(emailIdx > -1 && row[emailIdx]) contacts.push({type:'email', value:row[emailIdx]});
+    if(waIdx > -1 && row[waIdx]) contacts.push({type:'whatsapp', value:row[waIdx]});
+    if(msgIdx > -1 && row[msgIdx]) contacts.push({type:'messenger', value:row[msgIdx]});
+    if(liIdx > -1 && row[liIdx]) contacts.push({type:'linkedin', value:row[liIdx]});
+
+    results.push({
+      id: uid(),
+      name,
+      role,
+      tz,
+      workStart: '09:00',
+      workEnd: '17:00',
+      workDays: [1,2,3,4,5],
+      color: CLOCK_COLORS[results.length % CLOCK_COLORS.length],
+      contacts: contacts.slice(0, 3)
+    });
+  }
+  return results;
+}
+
+function parseVcfContacts(text){
+  const cards = text.split(/END:VCARD/i);
+  const results = [];
+  cards.forEach(card => {
+    if(!card.trim()) return;
+    let name = '', role = '', tzRaw = '', phone = '', email = '';
+    const lines = card.split(/\r?\n/);
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if(/^FN[:;]/i.test(trimmed)) name = trimmed.replace(/^FN[:;][^:]*:/i, '').replace(/^FN:/i, '').trim();
+      else if(/^N[:;]/i.test(trimmed) && !name) {
+        const parts = trimmed.replace(/^N[:;][^:]*:/i, '').replace(/^N:/i, '').split(';');
+        name = [parts[1], parts[0]].filter(Boolean).join(' ').trim();
+      }
+      else if(/^TITLE[:;]/i.test(trimmed)) role = trimmed.replace(/^TITLE[:;][^:]*:/i, '').replace(/^TITLE:/i, '').trim();
+      else if(/^ORG[:;]/i.test(trimmed) && !role) role = trimmed.replace(/^ORG[:;][^:]*:/i, '').replace(/^ORG:/i, '').trim();
+      else if(/^TEL[:;]/i.test(trimmed)) phone = trimmed.replace(/^TEL[:;][^:]*:/i, '').replace(/^TEL:/i, '').trim();
+      else if(/^EMAIL[:;]/i.test(trimmed)) email = trimmed.replace(/^EMAIL[:;][^:]*:/i, '').replace(/^EMAIL:/i, '').trim();
+      else if(/^TZ[:;]/i.test(trimmed) || /^ADR[:;]/i.test(trimmed)) tzRaw = trimmed.replace(/^[^:]*:/i, '').trim();
+    });
+    if(!name) return;
+    const contacts = [];
+    if(phone) contacts.push({type:'phone', value:phone});
+    if(email) contacts.push({type:'email', value:email});
+    results.push({
+      id: uid(),
+      name,
+      role,
+      tz: resolveTz(tzRaw, ''),
+      workStart: '09:00',
+      workEnd: '17:00',
+      workDays: [1,2,3,4,5],
+      color: CLOCK_COLORS[results.length % CLOCK_COLORS.length],
+      contacts: contacts.slice(0, 3)
+    });
+  });
+  return results;
+}
+
+function openDirectoryModal(){
+  document.getElementById('directoryOverlay').classList.add('show');
+  renderDirectoryList('');
+}
+document.getElementById('dirSearchInput')?.addEventListener('input', e=>{
+  renderDirectoryList(e.target.value);
+});
+document.getElementById('btnAddPartnerFromDir')?.addEventListener('click', ()=>{
+  document.getElementById('directoryOverlay').classList.remove('show');
+  openClockModal(null);
+});
+
+function renderDirectoryList(query){
+  const grid = document.getElementById('directoryListGrid');
+  const countEl = document.getElementById('directorySubCount');
+  if(!grid) return;
+  const q = (query || '').trim().toLowerCase();
+  const filtered = state.clocks.filter(c => {
+    if(!q) return true;
+    const txt = `${c.name} ${c.role} ${c.tz} ${friendlyTz(c.tz)} ${(c.contacts||[]).map(m=>m.value).join(' ')}`.toLowerCase();
+    return txt.includes(q);
+  });
+  if(countEl) countEl.textContent = `${filtered.length} of ${state.clocks.length} Contacts`;
+  const now = new Date();
+  if(!filtered.length){
+    grid.innerHTML = `<div style="text-align:center;color:var(--text-mute);padding:2rem;font-size:.8rem;">${state.clocks.length ? 'No matching contacts found.' : 'No contacts saved yet. Import CSV/VCF or add a new contact above.'}</div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(c => {
+    const st = clockStatus(c, now);
+    const contactBtns = buildContactButtons(c);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:.7rem;padding:.65rem .85rem;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-left:3px solid ${c.color};flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:.65rem;min-width:180px;flex:1;">
+        <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0;"></div>
+        <div>
+          <b style="font-size:.84rem;color:${c.color};display:block;">${escapeHtml(c.name)}</b>
+          <span style="font-size:.68rem;color:var(--text-dim);">${escapeHtml(c.role || 'Contact')} · ${friendlyTz(c.tz)}</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <span style="font-family:'Space Grotesk';font-size:.9rem;font-weight:700;">${fmtClock(now, c.tz)}</span>
+        <span class="cc-status ${st.cls}">${st.label}</span>
+      </div>
+      ${contactBtns ? `<div style="width:100%;margin-top:.2rem;"><div class="pa-contacts">${contactBtns}</div></div>` : ''}
+      <div style="display:flex;gap:.35rem;margin-left:auto;">
+        <button class="btn btn-ghost btn-sm" onclick="editFromDir('${c.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteFromDir('${c.id}')" style="color:var(--red);"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.editFromDir = function(id){
+  const c = state.clocks.find(x => x.id === id);
+  if(!c) return;
+  document.getElementById('directoryOverlay').classList.remove('show');
+  openClockModal(c);
+};
+
+window.deleteFromDir = function(id){
+  if(!confirm('Delete this contact?')) return;
+  state.clocks = state.clocks.filter(x => x.id !== id);
+  save();
+  renderAll();
+  renderDirectoryList(document.getElementById('dirSearchInput')?.value || '');
+  toast('Deleted', 'Contact removed.', 'info');
+};
+
+/* CSV / VCF Import Handler */
+document.getElementById('contactsImportInput')?.addEventListener('change', e => {
+  const file = e.target.files?.[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    const text = evt.target.result;
+    let imported = [];
+    if(file.name.toLowerCase().endsWith('.vcf') || file.name.toLowerCase().endsWith('.vcard') || text.includes('BEGIN:VCARD')){
+      imported = parseVcfContacts(text);
+    } else {
+      imported = parseCsvContacts(text);
+    }
+    if(!imported.length){
+      toast('Import Error', 'No valid contacts found in file.', 'danger');
+      return;
+    }
+    state.clocks = [...state.clocks, ...imported];
+    save();
+    renderAll();
+    renderDirectoryList('');
+    toast('Import Success!', `${imported.length} contacts imported successfully.`, 'success');
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+/* CSV Export Handler */
+document.getElementById('btnExportContactsCsv')?.addEventListener('click', () => {
+  if(!state.clocks.length){
+    toast('No Contacts', 'No contacts to export.', 'warn');
+    return;
+  }
+  let csv = 'Name,Role,Timezone,WorkStart,WorkEnd,Phone,Email,WhatsApp,Messenger\n';
+  state.clocks.forEach(c => {
+    const getVal = t => (c.contacts || []).find(m => m.type === t)?.value || '';
+    csv += `"${(c.name||'').replace(/"/g, '""')}","${(c.role||'').replace(/"/g, '""')}","${c.tz}","${c.workStart}","${c.workEnd}","${getVal('phone')}","${getVal('email')}","${getVal('whatsapp')}","${getVal('messenger')}"\n`;
+  });
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `contacts_export_${todayStr()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  toast('Exported', 'Contacts downloaded as CSV.', 'success');
+});
 
 /* ---- PARTNER AVAILABILITY (in Planner Sidebar) ---- */
 function buildContactButtons(clock){
