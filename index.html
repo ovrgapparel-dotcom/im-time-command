@@ -338,8 +338,9 @@ tbody td{padding:.7rem .9rem;font-size:.76rem;}
 .modal .close:hover{color:var(--text);}
 .field{margin-bottom:.78rem;}
 .field label{display:block;font-size:.65rem;font-weight:600;color:var(--text-dim);margin-bottom:.28rem;text-transform:uppercase;letter-spacing:.03em;}
-.field input,.field select,.field textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border-strong);border-radius:8px;padding:.54rem .68rem;color:var(--text);font-size:.8rem;transition:border-color .14s;}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--blue);}
+.field input,.field select,.field textarea,.qa-select{width:100%;background:#141722 !important;border:1px solid var(--border-strong);border-radius:8px;padding:.54rem .68rem;color:#FFFFFF !important;font-size:.8rem;font-weight:600;transition:border-color .14s;}
+select option,.qa-select option{background-color:#141722 !important;color:#FFFFFF !important;font-size:.85rem;font-weight:600;padding:8px 12px;}
+.field input:focus,.field select:focus,.field textarea:focus,.qa-select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,.25);}
 .field textarea{resize:vertical;min-height:55px;}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
 .field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;}
