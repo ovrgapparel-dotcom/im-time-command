@@ -476,22 +476,22 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
 
     <div class="suite-nav" id="suiteNav">
       <button data-tab="agenda" class="active" style="--ni1:#4f9fff;--ni2:#1b57e0;">
-        <span class="nav-icon"><i class="fa-solid fa-calendar-days"></i></span>Agenda
+        <span class="nav-icon"><i class="fa-solid fa-calendar-days"></i></span><span data-i18n="tab_agenda">Agenda</span>
       </button>
       <button data-tab="tracker" style="--ni1:#34d399;--ni2:#047857;">
-        <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span>Growth
+        <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span><span data-i18n="tab_growth">Growth</span>
       </button>
       <button data-tab="playbook" style="--ni1:#a78bfa;--ni2:#6d28d9;">
-        <span class="nav-icon"><i class="fa-solid fa-book-open"></i></span>Playbook
+        <span class="nav-icon"><i class="fa-solid fa-book-open"></i></span><span data-i18n="tab_playbook">Playbook</span>
       </button>
       <button data-tab="calendly" style="--ni1:#f97066;--ni2:#dc4f44;">
-        <span class="nav-icon"><i class="fa-solid fa-calendar-check"></i></span>Cal Hub
+        <span class="nav-icon"><i class="fa-solid fa-calendar-check"></i></span><span data-i18n="tab_calendar">Calendar Hub</span>
       </button>
       <button data-tab="messaging" style="--ni1:#22d3ee;--ni2:#0e7490;">
-        <span class="nav-icon"><i class="fa-solid fa-comments"></i></span>Messages
+        <span class="nav-icon"><i class="fa-solid fa-comments"></i></span><span data-i18n="tab_messages">Messages</span>
       </button>
       <button data-tab="vault" style="--ni1:#e11d48;--ni2:#9f1239;">
-        <span class="nav-icon"><i class="fa-solid fa-box-archive"></i></span>Vault
+        <span class="nav-icon"><i class="fa-solid fa-box-archive"></i></span><span data-i18n="tab_vault">Vault</span>
       </button>
     </div>
 
@@ -1078,6 +1078,20 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
       <div class="field"><label>Your name</label><input type="text" id="setName"></div>
       <div class="field"><label>Business / brand</label><input type="text" id="setBiz"></div>
       <div class="field tz-search"><label>Primary time zone</label><input type="text" id="setTz"><div class="tz-dropdown" id="setTzDropdown"></div></div>
+      <div class="field">
+        <label>App Language / Idioma (Mobile &amp; Desktop)</label>
+        <select id="setLanguage">
+          <option value="auto">🌐 Auto (Detect Device Language)</option>
+          <option value="en">🇺🇸 English</option>
+          <option value="es">🇪🇸 Español (Spanish)</option>
+          <option value="fr">🇫🇷 Français (French)</option>
+          <option value="de">🇩🇪 Deutsch (German)</option>
+          <option value="pt">🇧🇷 Português (Portuguese)</option>
+          <option value="zh">🇨🇳 中文 (Chinese)</option>
+          <option value="ja">🇯🇵 日本語 (Japanese)</option>
+          <option value="ar">🇸🇦 العربية (Arabic)</option>
+        </select>
+      </div>
     </div>
     <div id="settingsTabIntegrations" style="display:none;">
       <div class="api-setup-card"><b><i class="fa-solid fa-robot" style="margin-right:.3rem;color:var(--purple);"></i>Optional: Gemini AI API Key</b><br>Upgrades Smart Reply to live Gemini AI.<ol><li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a></li><li>Create API Key → copy it → paste below</li></ol></div>
@@ -1593,6 +1607,7 @@ document.getElementById('btnSettings').addEventListener('click',()=>{
     document.getElementById('setTz').value=friendlyTz(state.profile.primaryTz);
     document.getElementById('setTz').dataset.tz=state.profile.primaryTz;
   }
+  if(document.getElementById('setLanguage')) document.getElementById('setLanguage').value=state.settings.language||'auto';
   if(document.getElementById('setLead')) document.getElementById('setLead').value=state.settings.lead||15;
   if(document.getElementById('setNotifChannel')) document.getElementById('setNotifChannel').value=state.settings.notifChannel||state.settings.notif||'whatsapp';
   if(document.getElementById('setGeminiKey')) document.getElementById('setGeminiKey').value=state.settings.geminiKey||'';
@@ -1604,6 +1619,10 @@ document.getElementById('btnSaveSettings').addEventListener('click',()=>{
   if(document.getElementById('setBiz')) state.profile.business=document.getElementById('setBiz').value.trim();
   const tzInp=document.getElementById('setTz');
   if(tzInp) state.profile.primaryTz=resolveTz(tzInp.value, tzInp.dataset.tz);
+  if(document.getElementById('setLanguage')) {
+    state.settings.language = document.getElementById('setLanguage').value;
+    applyLanguage(state.settings.language);
+  }
   if(document.getElementById('setLead')) state.settings.lead=Number(document.getElementById('setLead').value);
   if(document.getElementById('setNotifChannel')) state.settings.notifChannel=document.getElementById('setNotifChannel').value;
   if(document.getElementById('setGeminiKey')) state.settings.geminiKey=document.getElementById('setGeminiKey').value.trim();
@@ -3372,8 +3391,102 @@ window.jumpToTab = function(tabName){
   if(btn) btn.click();
 };
 
+/* ---- MULTI-LANGUAGE LOCALIZATION (i18n) ---- */
+const I18N_DICT = {
+  en: {
+    tab_agenda: "Agenda",
+    tab_growth: "Growth",
+    tab_playbook: "Playbook",
+    tab_calendar: "Calendar Hub",
+    tab_messages: "Messages",
+    tab_vault: "Vault"
+  },
+  es: {
+    tab_agenda: "Agenda",
+    tab_growth: "Crecimiento",
+    tab_playbook: "Manual",
+    tab_calendar: "Centro de Calendario",
+    tab_messages: "Mensajes",
+    tab_vault: "Bóveda"
+  },
+  fr: {
+    tab_agenda: "Agenda",
+    tab_growth: "Croissance",
+    tab_playbook: "Guide",
+    tab_calendar: "Hub Calendrier",
+    tab_messages: "Messages",
+    tab_vault: "Coffre-Fort"
+  },
+  de: {
+    tab_agenda: "Agenda",
+    tab_growth: "Wachstum",
+    tab_playbook: "Handbuch",
+    tab_calendar: "Kalender-Hub",
+    tab_messages: "Nachrichten",
+    tab_vault: "Tresor"
+  },
+  pt: {
+    tab_agenda: "Agenda",
+    tab_growth: "Crescimento",
+    tab_playbook: "Manual",
+    tab_calendar: "Hub de Calendário",
+    tab_messages: "Mensagens",
+    tab_vault: "Cofre"
+  },
+  zh: {
+    tab_agenda: "日程表",
+    tab_growth: "增长追踪",
+    tab_playbook: "创业指南",
+    tab_calendar: "日历中心",
+    tab_messages: "消息中心",
+    tab_vault: "资料库"
+  },
+  ja: {
+    tab_agenda: "アジェンダ",
+    tab_growth: "成長トラッカー",
+    tab_playbook: "プレイブック",
+    tab_calendar: "カレンダーハブ",
+    tab_messages: "メッセージ",
+    tab_vault: "保管庫"
+  },
+  ar: {
+    tab_agenda: "جدول الأعمال",
+    tab_growth: "مؤشر النمو",
+    tab_playbook: "دليل العمل",
+    tab_calendar: "مركز التقويم",
+    tab_messages: "الرسائل",
+    tab_vault: "الخزنة"
+  }
+};
+
+function getActiveLanguageCode(){
+  const userSetting = (state.settings && state.settings.language) ? state.settings.language : 'auto';
+  if(userSetting !== 'auto' && I18N_DICT[userSetting]) return userSetting;
+  const sysLang = (navigator.language || navigator.userLanguage || 'en').split('-')[0].toLowerCase();
+  return I18N_DICT[sysLang] ? sysLang : 'en';
+}
+
+function applyLanguage(targetLang){
+  const lang = targetLang || getActiveLanguageCode();
+  const dict = I18N_DICT[lang] || I18N_DICT.en;
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if(dict[key]) {
+      el.textContent = dict[key];
+    }
+  });
+
+  if(lang === 'ar') {
+    document.documentElement.setAttribute('dir', 'rtl');
+  } else {
+    document.documentElement.removeAttribute('dir');
+  }
+}
+
 /* ---- INIT ---- */
 function renderAll(){
+  applyLanguage();
   renderClockStrip();
   renderGrid();
   renderUpcomingList();
