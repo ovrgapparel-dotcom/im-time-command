@@ -1,4 +1,4 @@
-const CACHE = 'imt-v3';
+const CACHE = 'imt-v5';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -8,8 +8,9 @@ const PRECACHE = [
 ];
 
 self.addEventListener('install', e => {
+  self.skipWaiting();
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c => c.addAll(PRECACHE))
   );
 });
 
@@ -23,21 +24,32 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-  // Bypass service worker for Chrome extensions and cross-origin CDNs (FontAwesome, Google Fonts, etc.)
+  // Bypass service worker for Chrome extensions and cross-origin CDNs
   if (!url.startsWith('http://') && !url.startsWith('https://')) return;
   if (!url.startsWith(self.location.origin)) return;
 
+  // NETWORK FIRST for HTML navigation to guarantee immediate updates on Vercel
+  if (e.request.mode === 'navigate' || url.endsWith('/index.html') || url === self.location.origin + '/') {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Cache First for static assets
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(res => {
-        if (!res || res.status !== 200 || res.type !== 'basic') {
-          return res;
-        }
+        if (!res || res.status !== 200 || res.type !== 'basic') return res;
         const clone = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, clone)).catch(() => {});
         return res;
-      }).catch(() => caches.match('/index.html'));
+      });
     })
   );
 });
