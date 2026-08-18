@@ -348,6 +348,16 @@ tbody td{padding:.7rem .9rem;font-size:.76rem;}
 .gmail-connect-notice .gcn-icon{font-size:2.5rem;margin-bottom:.6rem;}
 .gmail-connect-notice p{font-size:.78rem;color:var(--text-mute);margin:.5rem 0 .9rem;line-height:1.5;max-width:340px;margin-left:auto;margin-right:auto;}
 
+/* ========== DIRECTORY BADGES ========== */
+.group-pill{font-size:.62rem;background:rgba(59,130,246,.18);color:var(--blue);border:1px solid rgba(59,130,246,.3);padding:1px 6px;border-radius:12px;font-weight:600;}
+.ind-pill{font-size:.62rem;background:rgba(139,92,246,.18);color:var(--purple);border:1px solid rgba(139,92,246,.3);padding:1px 6px;border-radius:12px;font-weight:600;}
+.prio-pill{font-size:.62rem;padding:1px 6px;border-radius:12px;font-weight:700;}
+.prio-high{background:rgba(249,112,102,.22);color:var(--coral);border:1px solid rgba(249,112,102,.4);}
+.prio-med{background:rgba(245,158,11,.2);color:var(--yellow);border:1px solid rgba(245,158,11,.35);}
+.prio-low{background:rgba(16,185,129,.18);color:var(--green);border:1px solid rgba(16,185,129,.3);}
+.tag-pill{font-size:.6rem;background:rgba(255,255,255,.08);color:var(--text-dim);border:1px solid var(--border);padding:1px 6px;border-radius:10px;cursor:pointer;transition:all .14s;}
+.tag-pill:hover, .tag-pill.active{background:rgba(59,130,246,.25);color:var(--text);border-color:var(--blue);}
+
 /* ========== MODALS ========== */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:60;padding:1rem;}
 .overlay.show{display:flex;}
@@ -1143,9 +1153,18 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
         <button class="btn btn-primary btn-sm" id="btnAddPartnerFromDir"><i class="fa-solid fa-user-plus"></i> Add Contact</button>
       </div>
     </div>
-    <div class="field" style="margin-bottom:.8rem;">
-      <input type="text" id="dirSearchInput" placeholder="Search contacts by name, role, timezone, city, email, or phone…">
+    <div style="display:grid;grid-template-columns:1fr 140px 140px 130px;gap:.5rem;margin-bottom:.6rem;">
+      <input type="text" id="dirSearchInput" placeholder="Search name, tag (#vip), role, city, email…">
+      <select id="dirFilterGroup" class="qa-select"><option value="">All Groups</option></select>
+      <select id="dirFilterIndustry" class="qa-select"><option value="">All Industries</option></select>
+      <select id="dirFilterPriority" class="qa-select">
+        <option value="">All Priorities</option>
+        <option value="high">🔥 High</option>
+        <option value="medium">⚡ Medium</option>
+        <option value="low">🌱 Low</option>
+      </select>
     </div>
+    <div id="dirTagChipsRow" style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.75rem;"></div>
     <div id="directoryListGrid" style="display:flex;flex-direction:column;gap:.5rem;max-height:420px;overflow-y:auto;padding-right:.2rem;"></div>
   </div>
 </div>
@@ -1162,6 +1181,37 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
     <input type="hidden" id="clockId">
     <div class="field"><label>Name</label><input type="text" id="clockName" placeholder="e.g. Amara — Lagos Partner"></div>
     <div class="field"><label>Role / Company</label><input type="text" id="clockRole" placeholder="e.g. Creative Director"></div>
+    <div class="field-row">
+      <div class="field">
+        <label>Group / List</label>
+        <input type="text" id="clockGroup" placeholder="e.g. VIP Clients, Lead Prospects" list="groupSuggestions">
+        <datalist id="groupSuggestions">
+          <option value="VIP Clients">
+          <option value="Lead Prospects">
+          <option value="Investors">
+          <option value="Partners">
+          <option value="Team">
+        </datalist>
+      </div>
+      <div class="field">
+        <label>Industry</label>
+        <input type="text" id="clockIndustry" placeholder="e.g. E-Commerce, SaaS, Fintech">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Priority Level</label>
+        <select id="clockPriority">
+          <option value="medium" selected>⚡ Medium Priority</option>
+          <option value="high">🔥 High Priority</option>
+          <option value="low">🌱 Low Priority</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tags (comma-separated)</label>
+        <input type="text" id="clockTags" placeholder="e.g. #q3deal, #web3, #keyaccount">
+      </div>
+    </div>
     <div class="field tz-search"><label>Time Zone (search city, country, or offset)</label><input type="text" id="clockTz" placeholder="e.g. Canada, Lagos, Tokyo, UTC-5…"><div class="tz-dropdown" id="clockTzDropdown"></div></div>
     <div class="field-row">
       <div class="field"><label>Work start</label><input type="time" id="clockWorkStart" value="09:00"></div>
@@ -1691,12 +1741,22 @@ document.getElementById('btnAddContactMethod').addEventListener('click',()=>{
 });
 
 function openClockModal(clock){
-  document.getElementById('clockModalTitle').textContent=clock?'Edit Collaborator':'Add Collaborator';
-  document.getElementById('clockId').value=clock?clock.id:'';document.getElementById('clockName').value=clock?clock.name:'';document.getElementById('clockRole').value=clock?clock.role:'';
+  document.getElementById('clockModalTitle').textContent=clock?'Edit Contact':'Add Contact';
+  document.getElementById('clockId').value=clock?clock.id:'';
+  document.getElementById('clockName').value=clock?clock.name:'';
+  document.getElementById('clockRole').value=clock?clock.role:'';
+  
+  if(document.getElementById('clockGroup')) document.getElementById('clockGroup').value=clock?clock.group||'':'';
+  if(document.getElementById('clockIndustry')) document.getElementById('clockIndustry').value=clock?clock.industry||'':'';
+  if(document.getElementById('clockPriority')) document.getElementById('clockPriority').value=clock?clock.priority||'medium':'medium';
+  if(document.getElementById('clockTags')) document.getElementById('clockTags').value=clock?(clock.tags||[]).join(', '):'';
+
   const tzInp=document.getElementById('clockTz');
   tzInp.value=clock?friendlyTz(clock.tz):'';
   tzInp.dataset.tz=clock?clock.tz:'';
-  document.getElementById('clockWorkStart').value=clock?clock.workStart:'09:00';document.getElementById('clockWorkEnd').value=clock?clock.workEnd:'17:00';document.getElementById('clockColor').value=clock?clock.color:nextClockColor();
+  document.getElementById('clockWorkStart').value=clock?clock.workStart:'09:00';
+  document.getElementById('clockWorkEnd').value=clock?clock.workEnd:'17:00';
+  document.getElementById('clockColor').value=clock?clock.color:nextClockColor();
   editClockDays=clock?clock.workDays.slice():[1,2,3,4,5];
   editContactMethods=clock&&clock.contacts?JSON.parse(JSON.stringify(clock.contacts)):[];
   renderContactMethodsFields();
@@ -1708,7 +1768,26 @@ document.getElementById('btnSaveClock').addEventListener('click',()=>{
   const tzInp=document.getElementById('clockTz');
   const tz=resolveTz(tzInp.value, tzInp.dataset.tz);
   const id=document.getElementById('clockId').value||uid();
-  const clock={id,name:document.getElementById('clockName').value.trim()||'Partner',role:document.getElementById('clockRole').value.trim(),tz,workStart:document.getElementById('clockWorkStart').value||'09:00',workEnd:document.getElementById('clockWorkEnd').value||'17:00',workDays:editClockDays.length?editClockDays:[1,2,3,4,5],color:document.getElementById('clockColor').value,contacts:editContactMethods.filter(m=>m.value.trim())};
+  const group=(document.getElementById('clockGroup')?.value||'').trim();
+  const industry=(document.getElementById('clockIndustry')?.value||'').trim();
+  const priority=document.getElementById('clockPriority')?.value||'medium';
+  const rawTags=(document.getElementById('clockTags')?.value||'').split(',').map(t=>t.trim().replace(/^#/,'')).filter(Boolean);
+
+  const clock={
+    id,
+    name:document.getElementById('clockName').value.trim()||'Partner',
+    role:document.getElementById('clockRole').value.trim(),
+    group,
+    industry,
+    priority,
+    tags:rawTags,
+    tz,
+    workStart:document.getElementById('clockWorkStart').value||'09:00',
+    workEnd:document.getElementById('clockWorkEnd').value||'17:00',
+    workDays:editClockDays.length?editClockDays:[1,2,3,4,5],
+    color:document.getElementById('clockColor').value,
+    contacts:editContactMethods.filter(m=>m.value.trim())
+  };
   const idx=state.clocks.findIndex(c=>c.id===id);if(idx>-1)state.clocks[idx]=clock;else state.clocks.push(clock);
   save();document.getElementById('clockOverlay').classList.remove('show');renderAll();
 });
@@ -1798,43 +1877,112 @@ function parseVcfContacts(text){
   return results;
 }
 
+let activeDirTag = '';
+
 function openDirectoryModal(){
+  populateDirectoryFilters();
   document.getElementById('directoryOverlay').classList.add('show');
-  renderDirectoryList('');
+  renderDirectoryList();
 }
-document.getElementById('dirSearchInput')?.addEventListener('input', e=>{
-  renderDirectoryList(e.target.value);
+
+function populateDirectoryFilters(){
+  const grpSelect = document.getElementById('dirFilterGroup');
+  const indSelect = document.getElementById('dirFilterIndustry');
+  const tagRow = document.getElementById('dirTagChipsRow');
+  
+  if(grpSelect){
+    const groups = [...new Set(state.clocks.map(c=>c.group).filter(Boolean))].sort();
+    const currGrp = grpSelect.value;
+    grpSelect.innerHTML = '<option value="">All Groups</option>' + groups.map(g=>`<option value="${escapeHtml(g)}" ${g===currGrp?'selected':''}>${escapeHtml(g)}</option>`).join('');
+  }
+  
+  if(indSelect){
+    const inds = [...new Set(state.clocks.map(c=>c.industry).filter(Boolean))].sort();
+    const currInd = indSelect.value;
+    indSelect.innerHTML = '<option value="">All Industries</option>' + inds.map(i=>`<option value="${escapeHtml(i)}" ${i===currInd?'selected':''}>${escapeHtml(i)}</option>`).join('');
+  }
+  
+  if(tagRow){
+    const allTags = [...new Set(state.clocks.flatMap(c=>c.tags||[]).filter(Boolean))].sort();
+    if(!allTags.length){
+      tagRow.innerHTML = '';
+    } else {
+      tagRow.innerHTML = `<span style="font-size:.65rem;color:var(--text-mute);align-self:center;">Quick Tags:</span> ` + allTags.map(t => `<button type="button" class="tag-pill ${activeDirTag===t?'active':''}" onclick="toggleDirTag('${escapeHtml(t)}')">#${escapeHtml(t)}</button>`).join(' ');
+    }
+  }
+}
+
+window.toggleDirTag = function(tag){
+  activeDirTag = (activeDirTag === tag) ? '' : tag;
+  populateDirectoryFilters();
+  renderDirectoryList();
+};
+
+['dirSearchInput','dirFilterGroup','dirFilterIndustry','dirFilterPriority'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', () => renderDirectoryList());
+  document.getElementById(id)?.addEventListener('input', () => renderDirectoryList());
 });
+
 document.getElementById('btnAddPartnerFromDir')?.addEventListener('click', ()=>{
   document.getElementById('directoryOverlay').classList.remove('show');
   openClockModal(null);
 });
 
-function renderDirectoryList(query){
+function renderDirectoryList(){
   const grid = document.getElementById('directoryListGrid');
   const countEl = document.getElementById('directorySubCount');
   if(!grid) return;
-  const q = (query || '').trim().toLowerCase();
+  
+  const q = (document.getElementById('dirSearchInput')?.value || '').trim().toLowerCase();
+  const fGroup = document.getElementById('dirFilterGroup')?.value || '';
+  const fIndustry = document.getElementById('dirFilterIndustry')?.value || '';
+  const fPriority = document.getElementById('dirFilterPriority')?.value || '';
+  
   const filtered = state.clocks.filter(c => {
-    if(!q) return true;
-    const txt = `${c.name} ${c.role} ${c.tz} ${friendlyTz(c.tz)} ${(c.contacts||[]).map(m=>m.value).join(' ')}`.toLowerCase();
-    return txt.includes(q);
+    if(fGroup && (c.group || '') !== fGroup) return false;
+    if(fIndustry && (c.industry || '') !== fIndustry) return false;
+    if(fPriority && (c.priority || 'medium') !== fPriority) return false;
+    if(activeDirTag && !(c.tags || []).includes(activeDirTag)) return false;
+    
+    if(q){
+      const txt = `${c.name} ${c.role} ${c.group} ${c.industry} ${(c.tags||[]).join(' ')} ${c.tz} ${friendlyTz(c.tz)} ${(c.contacts||[]).map(m=>m.value).join(' ')}`.toLowerCase();
+      if(!txt.includes(q)) return false;
+    }
+    return true;
   });
+
   if(countEl) countEl.textContent = `${filtered.length} of ${state.clocks.length} Contacts`;
   const now = new Date();
   if(!filtered.length){
-    grid.innerHTML = `<div style="text-align:center;color:var(--text-mute);padding:2rem;font-size:.8rem;">${state.clocks.length ? 'No matching contacts found.' : 'No contacts saved yet. Import CSV/VCF or add a new contact above.'}</div>`;
+    grid.innerHTML = `<div style="text-align:center;color:var(--text-mute);padding:2rem;font-size:.8rem;">${state.clocks.length ? 'No matching contacts found for selected filters.' : 'No contacts saved yet. Import CSV/VCF or add a new contact above.'}</div>`;
     return;
   }
+
   grid.innerHTML = filtered.map(c => {
     const st = clockStatus(c, now);
     const contactBtns = buildContactButtons(c);
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:.7rem;padding:.65rem .85rem;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-left:3px solid ${c.color};flex-wrap:wrap;">
-      <div style="display:flex;align-items:center;gap:.65rem;min-width:180px;flex:1;">
+    
+    const prioLabels = { high: '🔥 High', medium: '⚡ Med', low: '🌱 Low' };
+    const prioClasses = { high: 'prio-high', medium: 'prio-med', low: 'prio-low' };
+    const prioStr = c.priority ? `<span class="prio-pill ${prioClasses[c.priority]||'prio-med'}">${prioLabels[c.priority]||'⚡ Med'}</span>` : '';
+    const groupStr = c.group ? `<span class="group-pill"><i class="fa-solid fa-folder" style="font-size:.55rem;margin-right:2px;"></i>${escapeHtml(c.group)}</span>` : '';
+    const indStr = c.industry ? `<span class="ind-pill"><i class="fa-solid fa-industry" style="font-size:.55rem;margin-right:2px;"></i>${escapeHtml(c.industry)}</span>` : '';
+    const tagsStr = (c.tags || []).map(t => `<span class="tag-pill ${activeDirTag===t?'active':''}" onclick="toggleDirTag('${escapeHtml(t)}')">#${escapeHtml(t)}</span>`).join(' ');
+
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:.7rem;padding:.75rem .95rem;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-left:3px solid ${c.color};flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:.65rem;min-width:200px;flex:1;">
         <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0;"></div>
         <div>
-          <b style="font-size:.84rem;color:${c.color};display:block;">${escapeHtml(c.name)}</b>
-          <span style="font-size:.68rem;color:var(--text-dim);">${escapeHtml(c.role || 'Contact')} · ${friendlyTz(c.tz)}</span>
+          <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
+            <b style="font-size:.86rem;color:${c.color};">${escapeHtml(c.name)}</b>
+            ${groupStr}
+            ${indStr}
+            ${prioStr}
+          </div>
+          <div style="font-size:.68rem;color:var(--text-dim);margin-top:2px;">
+            ${escapeHtml(c.role || 'Contact')} · ${friendlyTz(c.tz)}
+          </div>
+          ${tagsStr ? `<div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-top:4px;">${tagsStr}</div>` : ''}
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:.6rem;">
