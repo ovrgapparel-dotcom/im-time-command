@@ -1359,7 +1359,28 @@ async function generateWithGemini(text,context,key){const prompt=`You are a prof
 let gmailTokenClient=null,currentGmailThread=null;
 function initGmailOAuth(){if(!window.google||!state.settings.gmailClientId)return;try{gmailTokenClient=google.accounts.oauth2.initTokenClient({client_id:state.settings.gmailClientId,scope:'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://mail.google.com/',callback:(resp)=>{if(resp.access_token){state.gmail={accessToken:resp.access_token,tokenExpiry:Date.now()+(resp.expires_in||3600)*1000};save();renderGmailPanel();toast('Gmail Connected','Inbox loaded.','success');}}});}catch(e){console.warn('Gmail init:',e);}}
 async function fetchGmailInbox(){if(!state.gmail?.accessToken)return;try{const listRes=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=15&q=in:inbox',{headers:{Authorization:'Bearer '+state.gmail.accessToken}});if(listRes.status===401){state.gmail=null;save();renderGmailPanel();return;}const listData=await listRes.json();const msgs=listData.messages||[];const threads=await Promise.all(msgs.slice(0,10).map(async m=>{const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`,{headers:{Authorization:'Bearer '+state.gmail.accessToken}});return r.json();}));state.gmail.threads=threads;save();renderGmailPanel();}catch(e){console.warn('Gmail fetch:',e);}}
-async function sendGmailMessage(to,subject,body,threadId){if(!state.gmail?.accessToken){toast('Gmail not connected','Connect Gmail first.','danger');return false;}const email=[`To: ${to}`,`Subject: ${subject}`,'Content-Type: text/plain; charset=utf-8','','',body].join('\r\n');const encoded=btoa(unescape(encodeURIComponent(email))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');const payload={raw:encoded};if(threadId)payload.threadId=threadId;try{const res=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{'Authorization':'Bearer '+state.gmail.accessToken,'Content-Type':'application/json'},body:JSON.stringify(payload)});if(res.ok){toast('Sent','Email sent.','success');return true;}}catch(e){}toast('Send Failed','Check Gmail connection.','danger');return false;}
+async function sendGmailMessage(to,subject,body,threadId){
+  if(!state.gmail?.accessToken){
+    // Smart Web Compose Fallback: opens Gmail in browser pre-filled with To, Subject, Body
+    const mailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailUrl, '_blank');
+    toast('Gmail Web Compose', `Opening pre-filled Gmail message to ${to}`, 'success');
+    return true;
+  }
+  const email=[`To: ${to}`,`Subject: ${subject}`,'Content-Type: text/plain; charset=utf-8','','',body].join('\r\n');
+  const encoded=btoa(unescape(encodeURIComponent(email))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const payload={raw:encoded};
+  if(threadId)payload.threadId=threadId;
+  try{
+    const res=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{'Authorization':'Bearer '+state.gmail.accessToken,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(res.ok){toast('Sent','Email sent via Gmail API.','success');return true;}
+  }catch(e){}
+  // Fallback to Web Compose on API failure
+  const mailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.open(mailUrl, '_blank');
+  toast('Gmail Web Compose', `Opening pre-filled Gmail message to ${to}`, 'info');
+  return true;
+}
 
 /* ---- DEFAULT STATE ---- */
 function defaultState(){return{profile:{name:'',business:'',primaryTz:Intl.DateTimeFormat().resolvedOptions().timeZone||'America/New_York',level:'starter',xp:0,joinDate:todayStr()},clocks:[],events:[],trackerActivities:[],completedMilestones:[],completedTasks:[],customMilestoneTasks:[],portfolioPieces:[],hub:{masterCal:'',cal15:'',cal30:''},settings:{lead:15,notif:'on',geminiKey:'',gmailClientId:''},gmail:null,view:{mode:'week',anchor:todayStr()},onboarded:false};}
@@ -1474,26 +1495,28 @@ document.getElementById('btnHelp').addEventListener('click',()=>document.getElem
 const stabs=document.querySelectorAll('.settings-tabs button');
 stabs.forEach(b=>b.addEventListener('click',()=>{stabs.forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('[id^="settingsTab"]').forEach(x=>x.style.display='none');const el=document.getElementById('settingsTab'+b.dataset.stab.charAt(0).toUpperCase()+b.dataset.stab.slice(1));if(el)el.style.display='block';}));
 document.getElementById('btnSettings').addEventListener('click',()=>{
-  document.getElementById('setName').value=state.profile.name;
-  document.getElementById('setBiz').value=state.profile.business;
-  document.getElementById('setTz').value=friendlyTz(state.profile.primaryTz);
-  document.getElementById('setTz').dataset.tz=state.profile.primaryTz;
-  document.getElementById('setLead').value=state.settings.lead;
-  document.getElementById('setNotif').value=state.settings.notif;
-  document.getElementById('setGeminiKey').value=state.settings.geminiKey||'';
-  document.getElementById('setGmailClientId').value=state.settings.gmailClientId||'';
+  if(document.getElementById('setName')) document.getElementById('setName').value=state.profile.name||'';
+  if(document.getElementById('setBiz')) document.getElementById('setBiz').value=state.profile.business||'';
+  if(document.getElementById('setTz')) {
+    document.getElementById('setTz').value=friendlyTz(state.profile.primaryTz);
+    document.getElementById('setTz').dataset.tz=state.profile.primaryTz;
+  }
+  if(document.getElementById('setLead')) document.getElementById('setLead').value=state.settings.lead||15;
+  if(document.getElementById('setNotifChannel')) document.getElementById('setNotifChannel').value=state.settings.notifChannel||state.settings.notif||'whatsapp';
+  if(document.getElementById('setGeminiKey')) document.getElementById('setGeminiKey').value=state.settings.geminiKey||'';
+  if(document.getElementById('setGmailClientId')) document.getElementById('setGmailClientId').value=state.settings.gmailClientId||'';
   document.getElementById('settingsOverlay').classList.add('show');
 });
 document.getElementById('btnSaveSettings').addEventListener('click',()=>{
-  state.profile.name=document.getElementById('setName').value.trim();
-  state.profile.business=document.getElementById('setBiz').value.trim();
+  if(document.getElementById('setName')) state.profile.name=document.getElementById('setName').value.trim();
+  if(document.getElementById('setBiz')) state.profile.business=document.getElementById('setBiz').value.trim();
   const tzInp=document.getElementById('setTz');
-  state.profile.primaryTz=resolveTz(tzInp.value, tzInp.dataset.tz);
-  state.settings.lead=Number(document.getElementById('setLead').value);
-  state.settings.notif=document.getElementById('setNotif').value;
-  state.settings.geminiKey=document.getElementById('setGeminiKey').value.trim();
-  state.settings.gmailClientId=document.getElementById('setGmailClientId').value.trim();
-  if(state.settings.notif==='on')requestNotifPermission();save();document.getElementById('settingsOverlay').classList.remove('show');renderAll();initGmailOAuth();toast('Saved','Settings updated.','success');
+  if(tzInp) state.profile.primaryTz=resolveTz(tzInp.value, tzInp.dataset.tz);
+  if(document.getElementById('setLead')) state.settings.lead=Number(document.getElementById('setLead').value);
+  if(document.getElementById('setNotifChannel')) state.settings.notifChannel=document.getElementById('setNotifChannel').value;
+  if(document.getElementById('setGeminiKey')) state.settings.geminiKey=document.getElementById('setGeminiKey').value.trim();
+  if(document.getElementById('setGmailClientId')) state.settings.gmailClientId=document.getElementById('setGmailClientId').value.trim();
+  save();document.getElementById('settingsOverlay').classList.remove('show');renderAll();initGmailOAuth();toast('Saved','Settings updated.','success');
 });
 
 /* ---- CLOCK STRIP ---- */
@@ -2120,12 +2143,33 @@ window.copyReply=function(text){const decoded=text.replace(/&#39;/g,"'");navigat
 /* ---- GMAIL ---- */
 function renderGmailPanel(){
   const body=document.getElementById('gmailPanelBody');const actions=document.getElementById('gmailHeaderActions');
-  if(!state.settings.gmailClientId){actions.innerHTML='';body.innerHTML=`<div class="gmail-connect-notice"><div class="gcn-icon"><span class="i3d i3d-lg" style="background:linear-gradient(145deg,#ea4335,#b31412);box-shadow:3px 4px 10px rgba(234,67,53,.5);color:#fff;margin:0 auto;"><i class="fa-brands fa-google"></i></span></div><p>Add your Google OAuth Client ID in <b>Settings → Integrations</b> to connect Gmail.</p><button class="btn btn-ghost btn-sm" onclick="document.getElementById('btnSettings').click()"><i class="fa-solid fa-gear"></i> Open Settings</button></div>`;return;}
-  if(!state.gmail?.accessToken){actions.innerHTML=`<button class="btn btn-primary btn-sm" id="btnConnectGmail"><i class="fa-brands fa-google"></i> Connect Gmail</button>`;body.innerHTML=`<div class="gmail-connect-notice"><div class="gcn-icon"><span class="i3d i3d-lg" style="background:linear-gradient(145deg,#ea4335,#b31412);box-shadow:3px 4px 10px rgba(234,67,53,.5);color:#fff;margin:0 auto;"><i class="fa-brands fa-google"></i></span></div><p>Click <b>Connect Gmail</b> to sign in and access your inbox.</p></div>`;document.getElementById('btnConnectGmail')?.addEventListener('click',()=>{initGmailOAuth();if(gmailTokenClient)gmailTokenClient.requestAccessToken();else toast('Not Ready','Reload the page and try again.','warn');});return;}
+  if(!state.settings.gmailClientId){
+    actions.innerHTML='';
+    body.innerHTML=`<div class="gmail-connect-notice">
+      <div class="gcn-icon"><span class="i3d i3d-lg" style="background:linear-gradient(145deg,#ea4335,#b31412);box-shadow:3px 4px 10px rgba(234,67,53,.5);color:#fff;margin:0 auto;"><i class="fa-brands fa-google"></i></span></div>
+      <p>Add your <b>Google OAuth Client ID</b> in Settings → Integrations to sync your live inbox, or use <b>Quick Compose</b> below to send pre-filled Gmail messages directly.</p>
+      <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:.6rem;">
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('btnSettings').click()"><i class="fa-solid fa-gear"></i> Configure OAuth ID</button>
+        <a href="https://mail.google.com/" target="_blank" class="btn btn-ghost btn-sm"><i class="fa-brands fa-google"></i> Open Web Gmail</a>
+      </div>
+    </div>`;
+    return;
+  }
+  if(!state.gmail?.accessToken){
+    actions.innerHTML=`<button class="btn btn-primary btn-sm" id="btnConnectGmail"><i class="fa-brands fa-google"></i> Connect Gmail</button>`;
+    body.innerHTML=`<div class="gmail-connect-notice">
+      <div class="gcn-icon"><span class="i3d i3d-lg" style="background:linear-gradient(145deg,#ea4335,#b31412);box-shadow:3px 4px 10px rgba(234,67,53,.5);color:#fff;margin:0 auto;"><i class="fa-brands fa-google"></i></span></div>
+      <p>Click <b>Connect Gmail</b> to authorize and fetch your live Google inbox.</p>
+    </div>`;
+    document.getElementById('btnConnectGmail')?.addEventListener('click',()=>{initGmailOAuth();if(gmailTokenClient)gmailTokenClient.requestAccessToken();else toast('Not Ready','Verify OAuth Client ID in Settings.','warn');});
+    return;
+  }
   actions.innerHTML=`<button class="btn btn-ghost btn-sm" id="btnRefreshGmail"><i class="fa-solid fa-rotate"></i></button><button class="btn btn-danger btn-sm" id="btnDisconnectGmail">Disconnect</button>`;
-  document.getElementById('btnRefreshGmail')?.addEventListener('click',()=>fetchGmailInbox());document.getElementById('btnDisconnectGmail')?.addEventListener('click',()=>{state.gmail=null;save();renderGmailPanel();});
+  document.getElementById('btnRefreshGmail')?.addEventListener('click',()=>fetchGmailInbox());
+  document.getElementById('btnDisconnectGmail')?.addEventListener('click',()=>{state.gmail=null;save();renderGmailPanel();});
   if(!state.gmail.threads){fetchGmailInbox();return;}
-  const threads=state.gmail.threads;if(!threads.length){body.innerHTML='<p style="color:var(--text-mute);font-size:.76rem;padding:.8rem 0;">No messages in inbox.</p>';return;}
+  const threads=state.gmail.threads;
+  if(!threads.length){body.innerHTML='<p style="color:var(--text-mute);font-size:.76rem;padding:.8rem 0;">No messages in inbox.</p>';return;}
   body.innerHTML='<div class="gmail-inbox-list">'+threads.map((t,i)=>{const h=t.payload?.headers||[];const from=h.find(x=>x.name==='From')?.value||'Unknown';const subject=h.find(x=>x.name==='Subject')?.value||'(no subject)';const unread=(t.labelIds||[]).includes('UNREAD');return`<div class="gmail-thread ${unread?'unread':''}" data-tidx="${i}"><div class="from">${escapeHtml(from.replace(/<.*>/,'').trim())}</div><div class="subject">${escapeHtml(subject)}</div><div class="snippet">${escapeHtml(t.snippet||'')}</div></div>`;}).join('')+'</div>';
   body.querySelectorAll('.gmail-thread').forEach(el=>el.addEventListener('click',()=>{const t=threads[Number(el.dataset.tidx)];const h=t.payload?.headers||[];currentGmailThread={threadId:t.threadId,from:h.find(x=>x.name==='From')?.value||'',subject:h.find(x=>x.name==='Subject')?.value||'',snippet:t.snippet||''};document.getElementById('gmailReplySubLine').textContent=`Re: ${currentGmailThread.subject} — ${currentGmailThread.from}`;document.getElementById('gmailReplyBody').value='';document.getElementById('gmailReplySuggestions').innerHTML='';document.getElementById('gmailReplyOverlay').classList.add('show');}));
 }
