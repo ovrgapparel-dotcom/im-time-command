@@ -1203,10 +1203,18 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
     </div>
     <div class="field"><label>Category</label><div class="chip-select" id="evCategory"></div></div>
     <div class="field"><label>Meeting link</label><input type="url" id="evLink" placeholder="https://meet.google.com/… or Zoom/Teams link"></div>
-    <div class="field"><label>Collaborator</label>
-      <select id="evCollaborator"><option value="">— none —</option></select>
-      <div class="gcal-line" id="evCollabTime"></div>
+    <div class="field-row">
+      <div class="field">
+        <label>Collaborator / Client</label>
+        <select id="evCollaborator"><option value="">— none —</option></select>
+      </div>
+      <div class="field tz-search">
+        <label>Event Time Zone</label>
+        <input type="text" id="evTz" placeholder="Search timezone (e.g. Tokyo, London, EST)…">
+        <div class="tz-dropdown" id="evTzDropdown"></div>
+      </div>
     </div>
+    <div class="gcal-line" id="evCollabTime" style="margin-bottom:.5rem;"></div>
     <div class="field"><label>Repeat</label>
       <div class="chip-select" id="evRepeatType">
         <button data-v="none" class="active">None</button><button data-v="daily">Daily</button><button data-v="weekdays">Weekdays</button><button data-v="weekly">Weekly</button><button data-v="custom">Custom</button>
@@ -1496,7 +1504,10 @@ function wireTzSearch(inputId,dropdownId,onPick){
     if(onPick)onPick(tz);
   });
 }
-wireTzSearch('onTz','onTzDropdown');wireTzSearch('setTz','setTzDropdown');wireTzSearch('clockTz','clockTzDropdown');
+/* ---- EVEN TZ BADGE CSS ---- */
+/* Added inline for event badge */
+
+wireTzSearch('onTz','onTzDropdown');wireTzSearch('setTz','setTzDropdown');wireTzSearch('clockTz','clockTzDropdown');wireTzSearch('evTz','evTzDropdown',()=>updateCollabPreview());
 
 /* ---- ONBOARDING ---- */
 if(state.profile.primaryTz) document.getElementById('onTz').value=friendlyTz(state.profile.primaryTz);
@@ -2008,7 +2019,42 @@ function renderGrid(){
     const body=document.createElement('div');body.className='day-body';body.style.height=gridH+'px';body.dataset.date=dateStr;
     body.style.gridColumn=colNum;body.style.gridRow='2';
     const nowZ=utcToZoned(new Date(),state.profile.primaryTz);if(nowZ.date===dateStr){const mins=minutesOf(nowZ.time)-GRID_SH*60;if(mins>=0&&mins<=totalMin){const line=document.createElement('div');line.className='now-line';line.style.top=(mins*PX_MIN)+'px';body.appendChild(line);}}
-    state.events.forEach(ev=>{if(!eventOccursOn(ev,dateStr))return;const sMin=minutesOf(ev.start)-GRID_SH*60,eMin=minutesOf(ev.end)-GRID_SH*60;if(eMin<=0||sMin>=totalMin)return;const top=Math.max(0,sMin)*PX_MIN,height=Math.max(16,(Math.min(totalMin,eMin)-Math.max(0,sMin))*PX_MIN);const cat=CATEGORIES.find(c=>c.id===ev.category)||CATEGORIES[0];const collab=state.clocks.find(c=>c.id===ev.collaboratorId);const block=document.createElement('div');block.className='event-block';block.style.top=top+'px';block.style.height=height+'px';block.style.background=cat.color+'cc';block.style.borderLeftColor=collab?collab.color:'rgba(255,255,255,.5)';block.dataset.evId=ev.id;block.innerHTML=`<div class="t">${escapeHtml(ev.title)}</div><div class="tm">${ev.start}–${ev.end}${ev.link?` · <i class="fa-solid fa-video" style="font-size:.52rem;"></i>`:''}${ev.repeat?.type!=='none'?' ↻':''}</div><div class="resize-handle"></div>`;body.appendChild(block);wireEventBlock(block,ev);});
+    state.events.forEach(ev=>{
+      if(!eventOccursOn(ev,dateStr))return;
+      const evTz = ev.tz || state.profile.primaryTz;
+      
+      // Convert event time to Viewer's Primary TimeZone for grid layout
+      const startUtc = zonedTimeToUtc(ev.date, ev.start, evTz);
+      const endUtc = zonedTimeToUtc(ev.date, ev.end, evTz);
+      const startZ = utcToZoned(startUtc, state.profile.primaryTz);
+      const endZ = utcToZoned(endUtc, state.profile.primaryTz);
+      
+      // Verify if converted event date matches current grid column date
+      if(startZ.date !== dateStr) return;
+      
+      const sMin=minutesOf(startZ.time)-GRID_SH*60, eMin=minutesOf(endZ.time)-GRID_SH*60;
+      if(eMin<=0||sMin>=totalMin)return;
+      
+      const top=Math.max(0,sMin)*PX_MIN, height=Math.max(16,(Math.min(totalMin,eMin)-Math.max(0,sMin))*PX_MIN);
+      const cat=CATEGORIES.find(c=>c.id===ev.category)||CATEGORIES[0];
+      const collab=state.clocks.find(c=>c.id===ev.collaboratorId);
+      
+      const block=document.createElement('div');
+      block.className='event-block';
+      block.style.top=top+'px';
+      block.style.height=height+'px';
+      block.style.background=cat.color+'cc';
+      block.style.borderLeftColor=collab?collab.color:'rgba(255,255,255,.5)';
+      block.dataset.evId=ev.id;
+      
+      const isDiffTz = evTz !== state.profile.primaryTz;
+      const tzBadge = isDiffTz ? `<span class="ev-tz-badge" title="Event set in ${friendlyTz(evTz)} (${ev.start}–${ev.end})">${tzAbbr(evTz, startUtc)}</span>` : '';
+      
+      block.title = `${ev.title}\nYour Time (${tzAbbr(state.profile.primaryTz, startUtc)}): ${startZ.time}–${endZ.time}\nEvent TZ (${tzAbbr(evTz, startUtc)}): ${ev.start}–${ev.end}`;
+      block.innerHTML=`<div class="t">${escapeHtml(ev.title)} ${tzBadge}</div><div class="tm">${startZ.time}–${endZ.time}${ev.link?` · <i class="fa-solid fa-video" style="font-size:.52rem;"></i>`:''}${ev.repeat?.type!=='none'?' ↻':''}</div><div class="resize-handle"></div>`;
+      body.appendChild(block);
+      wireEventBlock(block,ev);
+    });
     wireDayBodyDrag(body);cols.appendChild(header);cols.appendChild(body);
   });
 }
@@ -2117,8 +2163,27 @@ function openEventModal(ev,pd,ps,pe,presetCollabId){
   buildCategoryChips(document.getElementById('evCategory'),ev?ev.category:'meeting');
   const cid = ev ? (ev.collaboratorId || '') : (presetCollabId || '');
   document.getElementById('evCollaborator').value = cid;
+  
+  const presetCollab = state.clocks.find(c=>c.id===cid);
+  const targetTz = ev?.tz || (presetCollab ? presetCollab.tz : state.profile.primaryTz);
+  const evTzInp = document.getElementById('evTz');
+  if(evTzInp){
+    evTzInp.value = friendlyTz(targetTz);
+    evTzInp.dataset.tz = targetTz;
+  }
+
   updateCollabPreview();
-  ['evCollaborator','evDate','evStart','evEnd'].forEach(id=>document.getElementById(id).oninput=updateCollabPreview);
+  ['evCollaborator','evDate','evStart','evEnd','evTz'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCollabPreview));
+  document.getElementById('evCollaborator').onchange = () => {
+    const newCid = document.getElementById('evCollaborator').value;
+    const c = state.clocks.find(x=>x.id===newCid);
+    if(c && evTzInp){
+      evTzInp.value = friendlyTz(c.tz);
+      evTzInp.dataset.tz = c.tz;
+    }
+    updateCollabPreview();
+  };
+
   evRepType=ev?.repeat?.type||'none';evRepDays=ev?.repeat?.days?ev.repeat.days.slice():[];
   const rw=document.getElementById('evRepeatType');rw.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.getAttribute('data-v')===evRepType));
   document.getElementById('evRepeatDaysField').style.display=evRepType==='custom'?'block':'none';
@@ -2129,16 +2194,71 @@ function openEventModal(ev,pd,ps,pe,presetCollabId){
   document.getElementById('btnDeleteEvent').style.display=ev?'inline-flex':'none';document.getElementById('btnDeleteEvent').onclick=()=>{if(!confirm('Delete this block?'))return;state.events=state.events.filter(e=>e.id!==ev.id);save();document.getElementById('eventOverlay').classList.remove('show');renderAll();};
   updateGcalLink(ev);document.getElementById('eventOverlay').classList.add('show');
 }
-function updateCollabPreview(){const cid=document.getElementById('evCollaborator').value;const el=document.getElementById('evCollabTime');if(!cid){el.textContent='';return;}const c=state.clocks.find(x=>x.id===cid);if(!c){el.textContent='';return;}const date=document.getElementById('evDate').value,start=document.getElementById('evStart').value,end=document.getElementById('evEnd').value;if(!date||!start||!end)return;const su=zonedTimeToUtc(date,start,state.profile.primaryTz),eu=zonedTimeToUtc(date,end,state.profile.primaryTz);el.innerHTML=`<i class="fa-solid fa-user" style="margin-right:.25rem;"></i>${escapeHtml(c.name)}: <b>${fmtClock(su,c.tz)}–${fmtClock(eu,c.tz)}</b> (${fmtDateLabel(su,c.tz)}, ${tzOffsetLabel(c.tz)})`;}
+function updateCollabPreview(){
+  const el=document.getElementById('evCollabTime');if(!el)return;
+  const date=document.getElementById('evDate').value,start=document.getElementById('evStart').value,end=document.getElementById('evEnd').value;
+  if(!date||!start||!end){el.innerHTML='';return;}
+  const evTzInp=document.getElementById('evTz');
+  const evTzVal=resolveTz(evTzInp?evTzInp.value:'',evTzInp?evTzInp.dataset.tz:'')||state.profile.primaryTz;
+  
+  const startUtc=zonedTimeToUtc(date,start,evTzVal);
+  const endUtc=zonedTimeToUtc(date,end,evTzVal);
+  
+  const cid=document.getElementById('evCollaborator').value;
+  const c=state.clocks.find(x=>x.id===cid);
+  
+  let html=`<div style="display:flex;flex-direction:column;gap:.25rem;font-size:.73rem;background:rgba(255,255,255,.03);padding:.5rem .65rem;border-radius:8px;border:1px solid var(--border);">`;
+  
+  // 1. Viewer / Primary Time
+  const viewerStart=fmtClock(startUtc,state.profile.primaryTz), viewerEnd=fmtClock(endUtc,state.profile.primaryTz), viewerDate=fmtDateLabel(startUtc,state.profile.primaryTz);
+  html+=`<div><i class="fa-solid fa-user" style="color:var(--blue);margin-right:.25rem;"></i><b>Your Local Time (${tzAbbr(state.profile.primaryTz,startUtc)})</b>: <b>${viewerStart}–${viewerEnd}</b> <small style="color:var(--text-mute);">(${viewerDate})</small></div>`;
+  
+  // 2. Event Time Zone (if different from Primary)
+  if(evTzVal!==state.profile.primaryTz){
+    const evStart=fmtClock(startUtc,evTzVal), evEnd=fmtClock(endUtc,evTzVal), evDateLbl=fmtDateLabel(startUtc,evTzVal);
+    html+=`<div><i class="fa-solid fa-earth-americas" style="color:var(--purple);margin-right:.25rem;"></i><b>Event Time Zone (${tzAbbr(evTzVal,startUtc)})</b>: <b>${evStart}–${evEnd}</b> <small style="color:var(--text-mute);">(${evDateLbl})</small></div>`;
+  }
+  
+  // 3. Client Time Zone (if collaborator selected and different from Event TZ)
+  if(c && c.tz !== evTzVal){
+    const cStart=fmtClock(startUtc,c.tz), cEnd=fmtClock(endUtc,c.tz), cDateLbl=fmtDateLabel(startUtc,c.tz);
+    html+=`<div><i class="fa-solid fa-user-gear" style="color:var(--green);margin-right:.25rem;"></i><b>${escapeHtml(c.name)} (${tzAbbr(c.tz,startUtc)})</b>: <b>${cStart}–${cEnd}</b> <small style="color:var(--text-mute);">(${cDateLbl})</small></div>`;
+  }
+  
+  html+=`</div>`;
+  el.innerHTML=html;
+}
 function renderNotesLog(){const w=document.getElementById('evNotesLog');w.innerHTML=evNotes.length?evNotes.map(n=>`<div class="note-entry"><small>${new Date(n.ts).toLocaleString()}</small>${escapeHtml(n.text)}</div>`).join(''):'<div style="color:var(--text-mute);font-size:.68rem;">No notes yet.</div>';w.scrollTop=w.scrollHeight;}
 document.getElementById('evNoteInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();const v=e.target.value.trim();if(v){evNotes.push({ts:Date.now(),text:v});e.target.value='';renderNotesLog();}}});
-function updateGcalLink(ev){const el=document.getElementById('evGcalLink');if(!ev){el.innerHTML='<span style="color:var(--text-mute);">Save to enable Google Calendar link.</span>';return;}const su=zonedTimeToUtc(ev.date,ev.start,state.profile.primaryTz);const eu=zonedTimeToUtc(ev.date,ev.end,state.profile.primaryTz);const fmt=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');const details=ev.notes?.length?ev.notes.map(n=>n.text).join(' — '):ev.link||'';el.innerHTML=`<a href="https://calendar.google.com/calendar/render?${new URLSearchParams({action:'TEMPLATE',text:ev.title,dates:`${fmt(su)}/${fmt(eu)}`,details}).toString()}" target="_blank"><i class="fa-brands fa-google" style="margin-right:.25rem;"></i>Add to Google Calendar</a>`;}
+function updateGcalLink(ev){
+  const el=document.getElementById('evGcalLink');
+  if(!ev){el.innerHTML='<span style="color:var(--text-mute);">Save to enable Google Calendar link.</span>';return;}
+  const evTz = ev.tz || state.profile.primaryTz;
+  const su=zonedTimeToUtc(ev.date,ev.start,evTz);
+  const eu=zonedTimeToUtc(ev.date,ev.end,evTz);
+  const fmt=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+  const details=ev.notes?.length?ev.notes.map(n=>n.text).join(' — '):ev.link||'';
+  el.innerHTML=`<a href="https://calendar.google.com/calendar/render?${new URLSearchParams({action:'TEMPLATE',text:ev.title,dates:`${fmt(su)}/${fmt(eu)}`,details}).toString()}" target="_blank"><i class="fa-brands fa-google" style="margin-right:.25rem;"></i>Add to Google Calendar</a>`;
+}
 document.getElementById('btnSaveEvent').addEventListener('click',()=>{
-  const id=document.getElementById('evId').value||uid();const title=document.getElementById('evTitle').value.trim()||'Untitled';const date=document.getElementById('evDate').value||todayStr();const start=document.getElementById('evStart').value||'09:00';let end=document.getElementById('evEnd').value||'09:30';if(end<=start)end=minutesToTime(minutesOf(start)+30);
-  const category=document.getElementById('evCategory').querySelector('button.active')?.getAttribute('data-v')||'meeting';const collaboratorId=document.getElementById('evCollaborator').value||null;const link=document.getElementById('evLink').value.trim();
+  const id=document.getElementById('evId').value||uid();
+  const title=document.getElementById('evTitle').value.trim()||'Untitled';
+  const date=document.getElementById('evDate').value||todayStr();
+  const start=document.getElementById('evStart').value||'09:00';
+  let end=document.getElementById('evEnd').value||'09:30';
+  if(end<=start)end=minutesToTime(minutesOf(start)+30);
+  
+  const evTzInp=document.getElementById('evTz');
+  const tz=resolveTz(evTzInp?evTzInp.value:'',evTzInp?evTzInp.dataset.tz:'')||state.profile.primaryTz;
+  
+  const category=document.getElementById('evCategory').querySelector('button.active')?.getAttribute('data-v')||'meeting';
+  const collaboratorId=document.getElementById('evCollaborator').value||null;
+  const link=document.getElementById('evLink').value.trim();
   const nd=document.getElementById('evNoteInput').value.trim();if(nd)evNotes.push({ts:Date.now(),text:nd});
-  const obj={id,title,date,start,end,category,collaboratorId,link,notes:evNotes,repeat:{type:evRepType,days:evRepType==='custom'?evRepDays.slice():[],until:null},reminder:{enabled:document.getElementById('evReminderOn').value==='on',leadMin:Number(document.getElementById('evReminderLead').value)},_notified:{}};
-  const idx=state.events.findIndex(e=>e.id===id);if(idx>-1)state.events[idx]=obj;else state.events.push(obj);save();document.getElementById('eventOverlay').classList.remove('show');renderAll();
+  
+  const obj={id,title,date,start,end,tz,category,collaboratorId,link,notes:evNotes,repeat:{type:evRepType,days:evRepType==='custom'?evRepDays.slice():[],until:null},reminder:{enabled:document.getElementById('evReminderOn').value==='on',leadMin:Number(document.getElementById('evReminderLead').value)},_notified:{}};
+  const idx=state.events.findIndex(e=>e.id===id);if(idx>-1)state.events[idx]=obj;else state.events.push(obj);
+  save();document.getElementById('eventOverlay').classList.remove('show');renderAll();
 });
 document.getElementById('btnNewBlock').addEventListener('click',()=>openEventModal(null,state.view.anchor,'09:00','09:30'));
 document.getElementById('viewDayBtn').addEventListener('click',()=>{state.view.mode='day';save();syncViewBtns();renderGrid();});
