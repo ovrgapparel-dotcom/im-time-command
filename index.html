@@ -1911,7 +1911,7 @@ function renderTrackerView(){
   document.getElementById('trackerMilestoneCount').textContent=`${completedTasksCount} / ${totalTasksCount} Actionable Tasks`;
 
   const sorted=state.trackerActivities.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));let cum=0;const chartData=sorted.map(a=>{cum+=a.xp;return{x:new Date(a.date),y:cum};});if(!chartData.length)chartData.push({x:new Date(),y:0});
-  if(trackerChart)trackerChart.destroy();trackerChart=new Chart(document.getElementById('growthChartCanvas').getContext('2d'),{type:'line',data:{datasets:[{label:'Cumulative XP',data:chartData,borderColor:'#3B82F6',backgroundColor:'rgba(59,130,246,.1)',fill:true,tension:.35,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{type:'time',time:{unit:'day'},grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'var(--text-mute)'}},y:{beginAtZero:true,grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'var(--text-mute)'}}},plugins:{legend:{labels:{color:'var(--text-dim)'}}}}}); 
+  if(trackerChart)trackerChart.destroy();trackerChart=new Chart(document.getElementById('growthChartCanvas').getContext('2d'),{type:'line',data:{datasets:[{label:'Cumulative XP',data:chartData,borderColor:'#3B82F6',backgroundColor:'rgba(59,130,246,.15)',fill:true,tension:.35,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{type:'time',time:{unit:'day'},grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#CBD5E1',font:{size:11,weight:'600',family:'Poppins'}}},y:{beginAtZero:true,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#CBD5E1',font:{size:11,weight:'600',family:'Poppins'}}}},plugins:{legend:{labels:{color:'#F1F5F9',font:{size:11.5,weight:'600',family:'Poppins'}}}}}}); 
 }
 
 window.toggleTask=function(taskId,xpVal,taskTitle){
@@ -2125,8 +2125,8 @@ function renderPlannerMetrics(){
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: { grid: { color: 'rgba(255,255,255,.03)' }, ticks: { color: 'var(--text-mute)' } },
-          y: { beginAtZero: true, stepSize: 1, grid: { color: 'rgba(255,255,255,.03)' }, ticks: { color: 'var(--text-mute)' } }
+          x: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: '#CBD5E1', font: { size: 11, weight: '600', family: 'Poppins' } } },
+          y: { beginAtZero: true, stepSize: 1, grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: '#CBD5E1', font: { size: 11, weight: '600', family: 'Poppins' } } }
         },
         plugins: { legend: { display: false } }
       }
@@ -2161,7 +2161,16 @@ function renderPlannerMetrics(){
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'right', labels: { color: 'var(--text-dim)', font: { size: 11 } } }
+          legend: {
+            position: 'right',
+            labels: {
+              color: '#F1F5F9',
+              font: { size: 11.5, weight: '600', family: 'Poppins' },
+              padding: 12,
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          }
         }
       }
     });
