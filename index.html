@@ -1373,6 +1373,34 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
   </div>
 </div>
 
+<!-- DYNAMIC QUICK GUIDE & SECTION WALKTHROUGH MODAL -->
+<div class="overlay" id="helpOverlay">
+  <div class="panel modal wide" style="max-width:720px;">
+    <button class="close" data-close="helpOverlay">✕</button>
+    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem;">
+      <span class="i3d i3d-sm i3d-gold"><i class="fa-solid fa-graduation-cap"></i></span>
+      <h3 style="font-family:'Space Grotesk';">Interactive Suite Guide &amp; Walkthrough</h3>
+    </div>
+    <p class="sub" style="margin-bottom:.8rem;">Master every section of iM Time Command for global business execution</p>
+    
+    <div class="settings-tabs" id="guideTabs" style="margin-bottom:1rem;flex-wrap:wrap;">
+      <button class="active" data-gtab="agenda"><i class="fa-solid fa-calendar-days"></i> Agenda</button>
+      <button data-gtab="tracker"><i class="fa-solid fa-chart-line"></i> Growth</button>
+      <button data-gtab="playbook"><i class="fa-solid fa-book-open"></i> Playbook</button>
+      <button data-gtab="calendar"><i class="fa-solid fa-calendar-check"></i> Calendar</button>
+      <button data-gtab="messaging"><i class="fa-solid fa-comments"></i> Messages</button>
+      <button data-gtab="vault"><i class="fa-solid fa-box-archive"></i> Vault</button>
+    </div>
+
+    <div id="guideContentBox" style="background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:12px;padding:1.1rem;margin-bottom:1rem;min-height:220px;line-height:1.6;"></div>
+
+    <div class="modal-actions" style="margin-top:0;">
+      <div class="left"><button class="btn btn-ghost btn-sm" id="btnGuideGoSettings"><i class="fa-solid fa-gear"></i> Open Settings</button></div>
+      <div class="right"><button class="btn btn-primary btn-sm" data-close="helpOverlay"><i class="fa-solid fa-check"></i> Got It</button></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast-stack" id="toastStack"></div>
 
 <script>
@@ -1592,10 +1620,148 @@ document.getElementById('btnStart').addEventListener('click',()=>{
 });
 if(state.onboarded){document.getElementById('welcomeOverlay').classList.remove('show');document.getElementById('app').style.display='flex';}
 
+/* ---- DYNAMIC SECTION QUICK GUIDE & WALKTHROUGH ---- */
+const SECTION_GUIDES = {
+  agenda: {
+    icon: 'fa-calendar-days',
+    title: '📅 Agenda & Global Time Command Planner',
+    color: '#3B82F6',
+    desc: 'The central command hub for scheduling time blocks across world time zones, managing client contacts, and tracking recovery buffers.',
+    tips: [
+      '<b>Collaborator Clocks</b>: Add team members and clients with their home time zone and working hours.',
+      '<b>Directory Groups & Tags</b>: Organize contacts into VIP Clients, Investors, or Lead Prospects and sort by #tags.',
+      '<b>Multi-Timezone Events</b>: Set any event time zone — the agenda grid automatically converts and places it on your local time grid.',
+      '<b>Warm-up & Cool-down Analytics</b>: Track buffer gaps between client meetings to prevent burnout.'
+    ],
+    tabName: 'agenda'
+  },
+  tracker: {
+    icon: 'fa-chart-line',
+    title: '📈 Entrepreneur Growth Tracker',
+    color: '#10B981',
+    desc: 'Gamify your business journey by logging daily high-value activities, earning XP, and building your milestone pipeline.',
+    tips: [
+      '<b>Activity Logging</b>: Earn 10 to 75 XP for sessions, trainings, hosting workshops, partnerships, and product launches.',
+      '<b>Milestone Journey</b>: Complete 12 core actionable business milestones across 4 stages.',
+      '<b>Excel Export</b>: Export your entire activity history to .xlsx with 1 click.'
+    ],
+    tabName: 'tracker'
+  },
+  playbook: {
+    icon: 'fa-book-open',
+    title: '📖 Entrepreneur Playbook & Proof-of-Work Vault',
+    color: '#8B5CF6',
+    desc: 'Master foundational business principles and build a public proof-of-work portfolio of receipts.',
+    tips: [
+      '<b>7 Core Principles</b>: Build real things, leverage AI automation, document work, stack human skills, own your audience.',
+      '<b>Portfolio Receipts</b>: Log case studies, automation dashboards, and deals to showcase your real track record.'
+    ],
+    tabName: 'playbook'
+  },
+  calendar: {
+    icon: 'fa-calendar-check',
+    title: '🗓️ Calendar & Booking Hub',
+    color: '#F97066',
+    desc: 'Streamline client booking links, launch Google Meet sessions, and export schedule files.',
+    tips: [
+      '<b>Calendly Quick Links</b>: Save master links and copy 15-min or 30-min booking links instantly.',
+      '<b>Instant Google Meet Launcher</b>: Create one-click video meeting links with prep notes.',
+      '<b>ICS File Export</b>: Download calendar files to sync with Apple Calendar, Google, or Outlook.'
+    ],
+    tabName: 'calendly'
+  },
+  messaging: {
+    icon: 'fa-comments',
+    title: '💬 Messaging Hub & Smart AI Replies',
+    color: '#06B6D4',
+    desc: 'Connect with clients across WhatsApp, Telegram, Messenger, Instagram, LinkedIn, Signal, and Gmail with AI support.',
+    tips: [
+      '<b>Multi-Platform Launcher</b>: Open direct chat windows for any saved contact.',
+      '<b>AI Smart Reply</b>: Paste any received client message to generate 3 instant responses (Formal, Friendly, Direct).',
+      '<b>Gmail OAuth Integration</b>: Read inbox messages and send AI-assisted email drafts directly.'
+    ],
+    tabName: 'messaging'
+  },
+  vault: {
+    icon: 'fa-box-archive',
+    title: '📦 Client Notes & Media Vault',
+    color: '#EC4899',
+    desc: 'A permanent, searchable repository for client recaps, audio recordings, quotes, and reference links.',
+    tips: [
+      '<b>Linked Contact Storage</b>: Link meeting notes, voice memos, pictures, and documents directly to partner profiles.',
+      '<b>Category Filters</b>: Filter vault entries by Note, Voice, Document, Image, Quote, or Link.'
+    ],
+    tabName: 'vault'
+  }
+};
+
+let activeGuideTab = 'agenda';
+
+function openHelpModal(tabKey){
+  let currentKey = tabKey;
+  if(!currentKey){
+    const activeNavBtn = document.querySelector('#suiteNav button.active');
+    const currTab = activeNavBtn ? activeNavBtn.getAttribute('data-tab') : 'agenda';
+    const tabMap = { agenda: 'agenda', tracker: 'tracker', playbook: 'playbook', calendly: 'calendar', messaging: 'messaging', vault: 'vault' };
+    currentKey = tabMap[currTab] || 'agenda';
+  }
+  activeGuideTab = currentKey;
+
+  const gtabs = document.querySelectorAll('#guideTabs button');
+  gtabs.forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-gtab') === activeGuideTab);
+  });
+
+  renderGuideContent(activeGuideTab);
+  document.getElementById('helpOverlay').classList.add('show');
+}
+
+function renderGuideContent(key){
+  const guide = SECTION_GUIDES[key] || SECTION_GUIDES.agenda;
+  const box = document.getElementById('guideContentBox');
+  if(!box) return;
+
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.7rem;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <span class="i3d i3d-sm" style="background:${guide.color};color:#fff;"><i class="fa-solid ${guide.icon}"></i></span>
+        <h4 style="font-family:'Space Grotesk';font-size:1.1rem;color:${guide.color};">${guide.title}</h4>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="jumpFromGuide('${guide.tabName}')"><i class="fa-solid fa-arrow-right"></i> Navigate to Section</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-dim);margin-bottom:.9rem;">${guide.desc}</p>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:.85rem;border:1px solid var(--border);">
+      <b style="font-size:.78rem;color:var(--gold);display:block;margin-bottom:.45rem;"><i class="fa-solid fa-lightbulb" style="margin-right:4px;"></i> Key Capabilities &amp; Pro Tips:</b>
+      <ul style="font-size:.78rem;color:var(--text-dim);padding-left:1.2rem;margin:0;display:flex;flex-direction:column;gap:.4rem;">
+        ${guide.tips.map(t => `<li>${t}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+window.jumpFromGuide = function(tabName){
+  document.getElementById('helpOverlay').classList.remove('show');
+  jumpToTab(tabName);
+};
+
 /* ---- MODALS ---- */
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>document.getElementById(b.getAttribute('data-close')).classList.remove('show')));
 document.querySelectorAll('.overlay').forEach(ov=>ov.addEventListener('mousedown',e=>{if(e.target===ov&&ov.id!=='welcomeOverlay')ov.classList.remove('show');}));
-document.getElementById('btnHelp').addEventListener('click',()=>document.getElementById('helpOverlay').classList.add('show'));
+document.getElementById('btnHelp')?.addEventListener('click', () => openHelpModal());
+
+document.querySelectorAll('#guideTabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.getAttribute('data-gtab');
+    document.querySelectorAll('#guideTabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderGuideContent(key);
+  });
+});
+
+document.getElementById('btnGuideGoSettings')?.addEventListener('click', () => {
+  document.getElementById('helpOverlay').classList.remove('show');
+  document.getElementById('btnSettings').click();
+});
 
 /* ---- SETTINGS ---- */
 const stabs=document.querySelectorAll('.settings-tabs button');
