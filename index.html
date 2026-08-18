@@ -158,7 +158,10 @@ button{cursor:pointer;}
 .day-col-header small{font-size:.6rem;color:var(--text-mute);}
 .day-col-header.today{background:rgba(59,130,246,.15);border-bottom-color:var(--blue);}
 .day-body{position:relative;border-left:1px solid var(--border);background-image:repeating-linear-gradient(to bottom,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent calc(60px * var(--px-min)));}
-.day-body.dragover{background-color:rgba(59,130,246,.06);}
+.day-body.dragover{background-color:rgba(59,130,246,.18) !important;outline:2px dashed #3B82F6 !important;outline-offset:-2px;}
+.collab-chip{cursor:grab;user-select:none;transition:transform .15s,box-shadow .15s,opacity .15s;}
+.collab-chip:active{cursor:grabbing;}
+.collab-chip.dragging{opacity:.35;transform:scale(0.94);border-style:dashed !important;}
 .now-line{position:absolute;left:0;right:0;height:2px;background:var(--coral);z-index:2;box-shadow:0 0 8px var(--coral);}
 .now-line::before{content:'';position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--coral);}
 .event-block{position:absolute;left:3px;right:3px;border-radius:7px;padding:3px 6px;overflow:hidden;border-left:3px solid rgba(255,255,255,.7);cursor:grab;user-select:none;box-shadow:0 4px 12px rgba(0,0,0,.4);transition:box-shadow .12s;z-index:1;}
@@ -1500,11 +1503,52 @@ function renderClockStrip(){
   myChip.innerHTML=`<span class="i3d i3d-sm i3d-blue"><i class="fa-solid fa-user"></i></span><div><div class="label">You · ${tzAbbr(state.profile.primaryTz,now)}</div><div class="val">${fmtClock(now,state.profile.primaryTz)}</div><div class="sub">${fmtDateLabel(now,state.profile.primaryTz)} · ${escapeHtml(state.profile.business||'')}</div></div>`;
   strip.appendChild(myChip);
   // Collaborator chips
+  let draggedClockId = null;
   state.clocks.forEach(clock=>{
     const st=clockStatus(clock,now);
-    const chip=document.createElement('div');chip.className='collab-chip';chip.style.setProperty('--c',clock.color);chip.dataset.editId=clock.id;
+    const chip=document.createElement('div');
+    chip.className='collab-chip';
+    chip.style.setProperty('--c',clock.color);
+    chip.dataset.editId=clock.id;
+    chip.draggable = true;
+    chip.title = `Drag to re-order priority, or drag onto Agenda Calendar Grid to schedule a quick meeting with ${escapeHtml(clock.name)}!`;
     chip.innerHTML=`<div style="width:10px;height:10px;border-radius:50%;background:${clock.color};flex-shrink:0;box-shadow:0 0 6px ${clock.color};"></div><div style="flex:1;min-width:0;"><div class="cc-name" style="color:${clock.color};">${escapeHtml(clock.name)}</div><div class="cc-sub">${escapeHtml(clock.role||'')} · ${tzOffsetLabel(clock.tz)}</div><div class="cc-time">${fmtClock(now,clock.tz)}</div></div><span class="cc-status ${st.cls}">${st.label}</span>`;
+    
     chip.addEventListener('click',()=>openClockModal(clock));
+
+    // Drag-and-drop for priority reordering and calendar scheduling
+    chip.addEventListener('dragstart', (e) => {
+      draggedClockId = clock.id;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'collaborator_clock', id: clock.id, name: clock.name, tz: clock.tz }));
+      chip.classList.add('dragging');
+    });
+
+    chip.addEventListener('dragend', () => {
+      chip.classList.remove('dragging');
+      draggedClockId = null;
+    });
+
+    chip.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+
+    chip.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if(!draggedClockId || draggedClockId === clock.id) return;
+      const fromIdx = state.clocks.findIndex(c => c.id === draggedClockId);
+      const toIdx = state.clocks.findIndex(c => c.id === clock.id);
+      if(fromIdx > -1 && toIdx > -1){
+        const [moved] = state.clocks.splice(fromIdx, 1);
+        state.clocks.splice(toIdx, 0, moved);
+        save();
+        renderClockStrip();
+        renderPartnerAvail();
+        toast('Priority Arranged', `Reordered ${moved.name} to priority position ${toIdx + 1}.`, 'success');
+      }
+    });
+
     strip.appendChild(chip);
   });
   // Add contact button
@@ -1884,7 +1928,54 @@ function renderGrid(){
     wireDayBodyDrag(body);cols.appendChild(header);cols.appendChild(body);
   });
 }
-function wireDayBodyDrag(body){let dragging=false,startY=0,ghost=null;body.addEventListener('pointerdown',e=>{if(e.target.closest('.event-block'))return;dragging=true;startY=e.offsetY;ghost=document.createElement('div');ghost.className='drag-ghost';body.appendChild(ghost);body.setPointerCapture(e.pointerId);});body.addEventListener('pointermove',e=>{if(!dragging)return;const y1=Math.min(startY,e.offsetY),y2=Math.max(startY,e.offsetY);const snap=15*PX_MIN;const top=Math.round(y1/snap)*snap;ghost.style.top=top+'px';ghost.style.height=Math.max(snap,Math.round(y2/snap)*snap-top)+'px';});function finish(e){if(!dragging)return;dragging=false;const y1=Math.min(startY,e.offsetY??startY),y2=Math.max(startY,e.offsetY??startY);const snap=15*PX_MIN;const top=Math.round(y1/snap)*snap;const bottom=Math.max(top+snap,Math.round(y2/snap)*snap);if(ghost)ghost.remove();const sMin=GRID_SH*60+top/PX_MIN,eMin=GRID_SH*60+bottom/PX_MIN;if(bottom-top<snap+2&&Math.abs(y2-y1)<4)openEventModal(null,body.dataset.date,minutesToTime(sMin),minutesToTime(sMin+30));else openEventModal(null,body.dataset.date,minutesToTime(sMin),minutesToTime(eMin));}body.addEventListener('pointerup',finish);}
+function wireDayBodyDrag(body){
+  let dragging=false,startY=0,ghost=null;
+  
+  // HTML5 Dragover and Drop for Collaborator Clock Cards
+  body.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    body.classList.add('dragover');
+  });
+
+  body.addEventListener('dragleave', () => {
+    body.classList.remove('dragover');
+  });
+
+  body.addEventListener('drop', e => {
+    body.classList.remove('dragover');
+    e.preventDefault();
+    const raw = e.dataTransfer.getData('text/plain');
+    if(!raw) return;
+    try {
+      const data = JSON.parse(raw);
+      if(data.type === 'collaborator_clock'){
+        const rect = body.getBoundingClientRect();
+        const offsetY = e.clientY - rect.top;
+        const totalMin = (GRID_EH - GRID_SH) * 60;
+        const snap = 15 * PX_MIN;
+        const top = Math.round(offsetY / snap) * snap;
+        const sMin = GRID_SH * 60 + top / PX_MIN;
+        const eMin = sMin + 30;
+        
+        const dateStr = body.dataset.date || todayStr();
+        const startTime = minutesToTime(sMin);
+        const endTime = minutesToTime(eMin);
+
+        scheduleWithContact(data.id);
+        
+        // Populate modal fields with dropped time slot
+        document.getElementById('evDate').value = dateStr;
+        document.getElementById('evStart').value = startTime;
+        document.getElementById('evEnd').value = endTime;
+        updateCollabPreview();
+
+        toast('Quick Meeting Setup!', `Dropped ${data.name} onto ${dateStr} at ${startTime}.`, 'success');
+      }
+    } catch(err){}
+  });
+
+  body.addEventListener('pointerdown',e=>{if(e.target.closest('.event-block'))return;dragging=true;startY=e.offsetY;ghost=document.createElement('div');ghost.className='drag-ghost';body.appendChild(ghost);body.setPointerCapture(e.pointerId);});body.addEventListener('pointermove',e=>{if(!dragging)return;const y1=Math.min(startY,e.offsetY),y2=Math.max(startY,e.offsetY);const snap=15*PX_MIN;const top=Math.round(y1/snap)*snap;ghost.style.top=top+'px';ghost.style.height=Math.max(snap,Math.round(y2/snap)*snap-top)+'px';});function finish(e){if(!dragging)return;dragging=false;const y1=Math.min(startY,e.offsetY??startY),y2=Math.max(startY,e.offsetY??startY);const snap=15*PX_MIN;const top=Math.round(y1/snap)*snap;const bottom=Math.max(top+snap,Math.round(y2/snap)*snap);if(ghost)ghost.remove();const sMin=GRID_SH*60+top/PX_MIN,eMin=GRID_SH*60+bottom/PX_MIN;if(bottom-top<snap+2&&Math.abs(y2-y1)<4)openEventModal(null,body.dataset.date,minutesToTime(sMin),minutesToTime(sMin+30));else openEventModal(null,body.dataset.date,minutesToTime(sMin),minutesToTime(eMin));}body.addEventListener('pointerup',finish);}
 function wireEventBlock(block,ev){let mode=null,startY=0,origTop=0,origH=0,startBody=null;const handle=block.querySelector('.resize-handle');block.addEventListener('pointerdown',e=>{if(e.target===handle)return;mode='move';startY=e.clientY;origTop=parseFloat(block.style.top);origH=parseFloat(block.style.height);startBody=block.parentElement;block.classList.add('dragging');block.setPointerCapture(e.pointerId);e.stopPropagation();});handle.addEventListener('pointerdown',e=>{mode='resize';startY=e.clientY;origH=parseFloat(block.style.height);origTop=parseFloat(block.style.top);block.setPointerCapture(e.pointerId);e.stopPropagation();});block.addEventListener('pointermove',e=>{if(!mode)return;const dy=e.clientY-startY;const snap=15*PX_MIN;if(mode==='resize')block.style.height=Math.max(snap,Math.round((origH+dy)/snap)*snap)+'px';else{block.style.top=Math.max(0,Math.round((origTop+dy)/snap)*snap)+'px';const el=document.elementFromPoint(e.clientX,e.clientY);const ob=el?el.closest('.day-body'):null;document.querySelectorAll('.day-body.dragover').forEach(d=>d.classList.remove('dragover'));if(ob)ob.classList.add('dragover');}});block.addEventListener('pointerup',e=>{if(!mode)return;document.querySelectorAll('.day-body.dragover').forEach(d=>d.classList.remove('dragover'));block.classList.remove('dragging');if(mode==='resize'){const hMin=parseFloat(block.style.height)/PX_MIN;const sMin=GRID_SH*60+origTop/PX_MIN;const ev2=state.events.find(e=>e.id===block.dataset.evId);if(ev2){ev2.end=minutesToTime(sMin+hMin);save();}}else if(mode==='move'){const el=document.elementFromPoint(e.clientX,e.clientY);const ob=el?el.closest('.day-body'):startBody;const nd=ob?ob.dataset.date:ev.date;const tMin=parseFloat(block.style.top)/PX_MIN;const dur=origH/PX_MIN;const ns=minutesToTime(GRID_SH*60+tMin),ne=minutesToTime(GRID_SH*60+tMin+dur);if(e.ctrlKey||e.metaKey)duplicateEvent(ev,nd,ns,ne);else{const t=state.events.find(x=>x.id===ev.id);if(t){t.date=nd;t.start=ns;t.end=ne;save();}}}mode=null;renderAll();});block.addEventListener('click',e=>{if(block.classList.contains('dragging'))return;openEventModal(ev);});}
 function duplicateEvent(ev,date,start,end){const copy=JSON.parse(JSON.stringify(ev));copy.id=uid();copy.date=date;copy.start=start;copy.end=end;copy.repeat={type:'none',days:[],until:null};state.events.push(copy);save();toast('Duplicated',`Copy of "${ev.title}" created.`,'success');}
 
