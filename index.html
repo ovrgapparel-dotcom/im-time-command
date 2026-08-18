@@ -7,6 +7,12 @@
 <meta name="description" content="Global time zone management, agenda planner, collaborator messaging hub, and entrepreneur growth suite for founders and remote teams.">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#C9A84C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="iM Time Command">
 <meta property="og:title" content="iM Time Command — Global Entrepreneur Suite">
 <meta property="og:description" content="Master cross-border availability, strategic planning & business growth velocity across time zones.">
 <meta property="og:image" content="assets/im_logo_gold.jpg">
@@ -21,6 +27,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));}</script>
 <style>
 :root{
   --bg1:#0b0d12;--bg2:#141720;
