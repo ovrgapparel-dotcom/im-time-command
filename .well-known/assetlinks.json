@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "imi.imtimecommand.app",
+    "sha256_cert_fingerprints": [
+      "B2:78:28:E9:65:7F:56:89:9E:CE:65:19:54:4A:93:16:1B:08:14:92:20:AE:A0:AE:6F:9E:50:FD:25:BE:9D:8B"
+    ]
+  }
+}]
