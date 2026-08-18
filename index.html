@@ -450,6 +450,9 @@ tbody td{padding:.7rem .9rem;font-size:.76rem;}
       <button data-tab="messaging" style="--ni1:#22d3ee;--ni2:#0e7490;">
         <span class="nav-icon"><i class="fa-solid fa-comments"></i></span>Messages
       </button>
+      <button data-tab="vault" style="--ni1:#e11d48;--ni2:#9f1239;">
+        <span class="nav-icon"><i class="fa-solid fa-box-archive"></i></span>Vault
+      </button>
     </div>
 
     <div class="primary-clock-pill">
@@ -837,6 +840,40 @@ tbody td{padding:.7rem .9rem;font-size:.76rem;}
           <div id="composeReplies" style="margin-top:.6rem;"></div>
         </div>
       </div>
+  </div>
+
+  <!-- TAB 6: NOTES & MEDIA VAULT -->
+  <div class="tab-view" id="viewVault">
+    <div class="panel" style="padding:1.4rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.3rem;flex-wrap:wrap;gap:.9rem;">
+        <div style="display:flex;align-items:center;gap:.9rem;">
+          <span class="i3d i3d-lg i3d-pink"><i class="fa-solid fa-box-archive"></i></span>
+          <div>
+            <h2 style="font-family:'Space Grotesk';font-size:1.4rem;" class="gradient-text">Client Notes &amp; Media Vault</h2>
+            <p style="font-size:.78rem;color:var(--text-mute);">Meeting recaps, voice notes, quotes, picture logs &amp; reference vault linked to contacts.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="btnNewVaultEntry"><i class="fa-solid fa-plus"></i> New Note &amp; Media Log</button>
+        </div>
+      </div>
+
+      <!-- Filters & Search Bar -->
+      <div style="display:grid;grid-template-columns:1fr 200px 160px;gap:.6rem;margin-bottom:1.2rem;">
+        <input type="text" id="vaultSearchInput" class="qa-input" placeholder="Search notes, quotes, recaps, contacts, or tags…">
+        <select id="vaultFilterClient" class="qa-select"><option value="">All Clients &amp; Partners</option></select>
+        <select id="vaultFilterType" class="qa-select">
+          <option value="">All Types</option>
+          <option value="recap">Meeting Recap</option>
+          <option value="quote">Quote / Offer</option>
+          <option value="voice">Voice Note</option>
+          <option value="picture">Picture Log</option>
+          <option value="reference">Reference / Link</option>
+        </select>
+      </div>
+
+      <!-- Vault Cards Grid -->
+      <div id="vaultCardsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:1rem;"></div>
     </div>
   </div>
 
@@ -850,6 +887,96 @@ tbody td{padding:.7rem .9rem;font-size:.76rem;}
       <button class="btn btn-ghost btn-sm" id="btnExportJson"><i class="fa-solid fa-download"></i> Backup</button>
       <label class="btn btn-ghost btn-sm" style="cursor:pointer;"><i class="fa-solid fa-upload"></i> Restore<input type="file" id="jsonImportInput" accept=".json" style="display:none;"></label>
       <button class="btn btn-danger btn-sm" id="btnResetAll"><i class="fa-solid fa-trash"></i> Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- VAULT ENTRY OVERLAY -->
+<div class="overlay" id="vaultOverlay">
+  <div class="panel modal wide" style="max-width:680px;">
+    <button class="close" data-close="vaultOverlay">✕</button>
+    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.2rem;">
+      <span class="i3d i3d-sm i3d-pink"><i class="fa-solid fa-box-archive"></i></span>
+      <h3 id="vaultModalTitle">Add Client Note &amp; Media Vault Log</h3>
+    </div>
+    <p class="sub">Store recaps, quotes, voice notes, photos &amp; reference links on device</p>
+    <input type="hidden" id="vaultId">
+    
+    <div class="field"><label>Title / Headline</label><input type="text" id="vaultTitle" placeholder="e.g. Q3 Growth Strategy Recap &amp; Quote"></div>
+    
+    <div class="field-row">
+      <div class="field">
+        <label>Entry Type</label>
+        <select id="vaultTypeSelect" class="qa-select">
+          <option value="recap">Meeting Recap</option>
+          <option value="quote">Quote / Pricing Offer</option>
+          <option value="voice">Voice Note</option>
+          <option value="picture">Picture / Photo Log</option>
+          <option value="reference">Reference / Document Link</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Link to Client / Partner</label>
+        <select id="vaultClientSelect" class="qa-select"><option value="">— None (General Note) —</option></select>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Link to Calendar Meeting Block</label>
+        <select id="vaultEventSelect" class="qa-select"><option value="">— None —</option></select>
+      </div>
+      <div class="field">
+        <label>Tags / Category</label>
+        <input type="text" id="vaultTags" placeholder="e.g. #strategy, #contract, #voice">
+      </div>
+    </div>
+
+    <div class="field"><label>Key Quote / Highlight (optional)</label><input type="text" id="vaultQuote" placeholder="e.g. 'Targeting 25% revenue bump by Oct 1st'"></div>
+
+    <div class="field"><label>Main Notes &amp; Meeting Recap</label><textarea id="vaultBody" placeholder="Log meeting notes, key action items, or reference details…" style="min-height:90px;"></textarea></div>
+
+    <!-- Voice Note Recorder Box -->
+    <div style="background:var(--panel-soft);border:1px solid var(--border-strong);border-radius:10px;padding:.85rem;margin-bottom:.85rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem;">
+        <div style="display:flex;align-items:center;gap:.45rem;">
+          <span class="i3d i3d-sm i3d-orange"><i class="fa-solid fa-microphone"></i></span>
+          <b style="font-size:.82rem;">Voice Note Recorder</b>
+        </div>
+        <div id="voiceRecTimer" style="font-family:'Space Grotesk';font-size:.85rem;color:var(--coral);font-weight:700;">00:00</div>
+      </div>
+      <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost btn-sm" id="btnRecordVoice"><i class="fa-solid fa-circle" style="color:var(--red);"></i> Record Voice Note</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnStopRecordVoice" style="display:none;"><i class="fa-solid fa-square"></i> Stop Recording</button>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer;"><i class="fa-solid fa-file-audio"></i> Upload Audio<input type="file" id="voiceFileInput" accept="audio/*" style="display:none;"></label>
+      </div>
+      <div id="voiceAudioPlayerWrap" style="margin-top:.6rem;display:none;">
+        <audio id="vaultAudioPlayer" controls style="width:100%;height:36px;"></audio>
+      </div>
+    </div>
+
+    <!-- Photo / Picture Log Attachment Box -->
+    <div style="background:var(--panel-soft);border:1px solid var(--border-strong);border-radius:10px;padding:.85rem;margin-bottom:.85rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem;">
+        <div style="display:flex;align-items:center;gap:.45rem;">
+          <span class="i3d i3d-sm i3d-purple"><i class="fa-solid fa-image"></i></span>
+          <b style="font-size:.82rem;">Photo / Picture Log Attachment</b>
+        </div>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer;"><i class="fa-solid fa-upload"></i> Attach Photo<input type="file" id="pictureFileInput" accept="image/*" style="display:none;"></label>
+      </div>
+      <div id="picturePreviewWrap" style="margin-top:.4rem;display:none;text-align:center;">
+        <img id="vaultPicturePreview" style="max-height:160px;border-radius:8px;border:1px solid var(--border);object-fit:cover;">
+        <button type="button" class="btn btn-ghost btn-sm" id="btnRemovePicture" style="color:var(--red);margin-top:.35rem;"><i class="fa-solid fa-trash"></i> Remove Photo</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <div class="left"><button class="btn btn-danger btn-sm" id="btnDeleteVaultEntry" style="display:none;"><i class="fa-solid fa-trash"></i> Delete</button></div>
+      <div class="right">
+        <button type="button" class="btn btn-ghost btn-sm" id="btnExportVaultEmail"><i class="fa-solid fa-envelope"></i> Send Email</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCopyVaultMessage"><i class="fa-solid fa-copy"></i> Copy Text</button>
+        <button type="button" class="btn btn-primary" id="btnSaveVaultEntry"><i class="fa-solid fa-floppy-disk"></i> Save to Vault</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1181,12 +1308,13 @@ suiteNav.addEventListener('click',e=>{
   const btn=e.target.closest('button');if(!btn||!btn.dataset.tab)return;
   suiteNav.querySelectorAll('button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
   document.querySelectorAll('.tab-view').forEach(v=>v.classList.remove('active'));
-  const views={agenda:'viewAgenda',tracker:'viewTracker',playbook:'viewPlaybook',calendly:'viewCalendly',messaging:'viewMessaging'};
+  const views={agenda:'viewAgenda',tracker:'viewTracker',playbook:'viewPlaybook',calendly:'viewCalendly',messaging:'viewMessaging',vault:'viewVault'};
   const v=document.getElementById(views[btn.dataset.tab]);if(v)v.classList.add('active');
   if(btn.dataset.tab==='tracker')renderTrackerView();
   if(btn.dataset.tab==='playbook')renderPlaybookView();
   if(btn.dataset.tab==='calendly')renderHubView();
   if(btn.dataset.tab==='messaging'){renderPlatformGrid();renderGmailPanel();}
+  if(btn.dataset.tab==='vault')renderVaultView();
 });
 
 /* ---- TZ SEARCH ---- */
@@ -2198,6 +2326,300 @@ function renderPlannerMetrics(){
   }
 }
 
+/* ---- NOTES & MEDIA VAULT LOGIC ---- */
+let currentAudioBase64 = null, currentPictureBase64 = null;
+let mediaRecorder = null, audioChunks = [], recInterval = null, recSeconds = 0;
+
+function renderVaultView(){
+  populateVaultFilters();
+  renderVaultCards();
+}
+
+function populateVaultFilters(){
+  const clientSel = document.getElementById('vaultFilterClient');
+  if(clientSel){
+    clientSel.innerHTML = '<option value="">All Clients &amp; Partners</option>' + state.clocks.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  }
+}
+
+function renderVaultCards(){
+  const grid = document.getElementById('vaultCardsGrid');
+  if(!grid) return;
+
+  const q = (document.getElementById('vaultSearchInput')?.value || '').trim().toLowerCase();
+  const clientFilter = document.getElementById('vaultFilterClient')?.value || '';
+  const typeFilter = document.getElementById('vaultFilterType')?.value || '';
+
+  const entries = state.vaultEntries || [];
+  const filtered = entries.filter(e => {
+    if(clientFilter && e.clientId !== clientFilter) return false;
+    if(typeFilter && e.type !== typeFilter) return false;
+    if(!q) return true;
+    const txt = `${e.title} ${e.quote} ${e.body} ${e.tags} ${e.clientName}`.toLowerCase();
+    return txt.includes(q);
+  });
+
+  if(!filtered.length){
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-mute);padding:3rem;font-size:.84rem;">
+      <i class="fa-solid fa-box-archive" style="font-size:2rem;color:var(--blue);margin-bottom:.6rem;display:block;"></i>
+      ${entries.length ? 'No matching notes found.' : 'Your Client Vault is empty. Click "+ New Note & Media Log" to store recaps, quotes, or voice notes.'}
+    </div>`;
+    return;
+  }
+
+  const typeIcons = {
+    recap: { icon: 'fa-clipboard-list', col: 'var(--blue)' },
+    quote: { icon: 'fa-quote-left', col: 'var(--gold)' },
+    voice: { icon: 'fa-microphone', col: 'var(--coral)' },
+    picture: { icon: 'fa-image', col: 'var(--purple)' },
+    reference: { icon: 'fa-link', col: 'var(--cyan)' }
+  };
+
+  grid.innerHTML = filtered.map(item => {
+    const ti = typeIcons[item.type] || typeIcons.recap;
+    const client = state.clocks.find(c => c.id === item.clientId);
+    return `<div style="background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;padding:1.1rem;display:flex;flex-direction:column;gap:.6rem;border-top:3px solid ${ti.col};">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;">
+        <div>
+          <span style="font-size:.62rem;font-weight:700;text-transform:uppercase;color:${ti.col};letter-spacing:.05em;"><i class="fa-solid ${ti.icon}" style="margin-right:.25rem;"></i>${item.type}</span>
+          <h4 style="font-family:'Space Grotesk';font-size:.98rem;margin-top:.15rem;">${escapeHtml(item.title)}</h4>
+        </div>
+        <span style="font-size:.62rem;color:var(--text-mute);">${item.date || ''}</span>
+      </div>
+
+      ${client ? `<div style="font-size:.7rem;color:var(--blue);font-weight:600;"><i class="fa-solid fa-user" style="margin-right:.25rem;"></i>${escapeHtml(client.name)} (${friendlyTz(client.tz)})</div>` : ''}
+
+      ${item.quote ? `<div style="background:rgba(245,158,11,.08);border-left:3px solid var(--gold);padding:.4rem .6rem;border-radius:6px;font-size:.75rem;font-style:italic;color:var(--text-dim);"><i class="fa-solid fa-quote-left" style="color:var(--gold);margin-right:.3rem;"></i>"${escapeHtml(item.quote)}"</div>` : ''}
+
+      ${item.body ? `<p style="font-size:.76rem;color:var(--text-dim);line-height:1.45;white-space:pre-wrap;max-height:90px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(item.body)}</p>` : ''}
+
+      ${item.pictureData ? `<div style="margin-top:.2rem;text-align:center;"><img src="${item.pictureData}" style="max-height:130px;max-width:100%;border-radius:8px;object-fit:cover;"></div>` : ''}
+
+      ${item.audioData ? `<div style="margin-top:.2rem;"><audio controls src="${item.audioData}" style="width:100%;height:32px;"></audio></div>` : ''}
+
+      ${item.tags ? `<div style="font-size:.65rem;color:var(--text-mute);">${escapeHtml(item.tags)}</div>` : ''}
+
+      <div style="display:flex;gap:.35rem;margin-top:auto;padding-top:.4rem;border-top:1px solid var(--border);">
+        <button class="btn btn-ghost btn-sm" onclick="sendVaultEmail('${item.id}')" title="Send via Email/Gmail"><i class="fa-solid fa-envelope" style="color:var(--blue);"></i> Email</button>
+        <button class="btn btn-ghost btn-sm" onclick="copyVaultText('${item.id}')" title="Copy for WhatsApp/Messenger"><i class="fa-solid fa-copy"></i> Copy</button>
+        <button class="btn btn-ghost btn-sm" onclick="openVaultModal('${item.id}')" style="margin-left:auto;"><i class="fa-solid fa-pen"></i> Edit</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('vaultSearchInput')?.addEventListener('input', renderVaultCards);
+document.getElementById('vaultFilterClient')?.addEventListener('change', renderVaultCards);
+document.getElementById('vaultFilterType')?.addEventListener('change', renderVaultCards);
+
+function openVaultModal(id){
+  const entry = (state.vaultEntries || []).find(e => e.id === id);
+  
+  const clientSel = document.getElementById('vaultClientSelect');
+  clientSel.innerHTML = '<option value="">— None (General Note) —</option>' + state.clocks.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  
+  const eventSel = document.getElementById('vaultEventSelect');
+  eventSel.innerHTML = '<option value="">— None —</option>' + (state.events || []).map(ev => `<option value="${ev.id}">${escapeHtml(ev.title)} (${ev.date})</option>`).join('');
+
+  document.getElementById('vaultModalTitle').textContent = entry ? 'Edit Client Vault Entry' : 'New Note & Media Log';
+  document.getElementById('vaultId').value = entry ? entry.id : '';
+  document.getElementById('vaultTitle').value = entry ? entry.title : '';
+  document.getElementById('vaultTypeSelect').value = entry ? entry.type : 'recap';
+  document.getElementById('vaultClientSelect').value = entry ? entry.clientId || '' : '';
+  document.getElementById('vaultEventSelect').value = entry ? entry.eventId || '' : '';
+  document.getElementById('vaultTags').value = entry ? entry.tags || '' : '';
+  document.getElementById('vaultQuote').value = entry ? entry.quote || '' : '';
+  document.getElementById('vaultBody').value = entry ? entry.body || '' : '';
+
+  currentAudioBase64 = entry?.audioData || null;
+  currentPictureBase64 = entry?.pictureData || null;
+
+  const audioPlayer = document.getElementById('vaultAudioPlayer');
+  const audioWrap = document.getElementById('voiceAudioPlayerWrap');
+  if(currentAudioBase64){
+    audioPlayer.src = currentAudioBase64;
+    audioWrap.style.display = 'block';
+  } else {
+    audioWrap.style.display = 'none';
+  }
+
+  const picPreview = document.getElementById('vaultPicturePreview');
+  const picWrap = document.getElementById('picturePreviewWrap');
+  if(currentPictureBase64){
+    picPreview.src = currentPictureBase64;
+    picWrap.style.display = 'block';
+  } else {
+    picWrap.style.display = 'none';
+  }
+
+  document.getElementById('btnDeleteVaultEntry').style.display = entry ? 'inline-flex' : 'none';
+  document.getElementById('vaultOverlay').classList.add('show');
+}
+
+document.getElementById('btnNewVaultEntry')?.addEventListener('click', () => openVaultModal(null));
+
+document.getElementById('btnSaveVaultEntry')?.addEventListener('click', () => {
+  const id = document.getElementById('vaultId').value || uid();
+  const title = document.getElementById('vaultTitle').value.trim() || 'Untitled Note';
+  const type = document.getElementById('vaultTypeSelect').value;
+  const clientId = document.getElementById('vaultClientSelect').value || null;
+  const client = state.clocks.find(c => c.id === clientId);
+  const eventId = document.getElementById('vaultEventSelect').value || null;
+  const tags = document.getElementById('vaultTags').value.trim();
+  const quote = document.getElementById('vaultQuote').value.trim();
+  const body = document.getElementById('vaultBody').value.trim();
+
+  state.vaultEntries = state.vaultEntries || [];
+  const entryObj = {
+    id,
+    title,
+    type,
+    clientId,
+    clientName: client ? client.name : '',
+    eventId,
+    tags,
+    quote,
+    body,
+    audioData: currentAudioBase64,
+    pictureData: currentPictureBase64,
+    date: todayStr(),
+    timestamp: Date.now()
+  };
+
+  const idx = state.vaultEntries.findIndex(e => e.id === id);
+  if(idx > -1) state.vaultEntries[idx] = entryObj;
+  else state.vaultEntries.push(entryObj);
+
+  if(eventId){
+    const ev = state.events.find(x => x.id === eventId);
+    if(ev){
+      ev.notes = ev.notes || [];
+      ev.notes.push({ ts: Date.now(), text: `[Vault Note: ${title}] ${quote ? '"' + quote + '" ' : ''}${body}` });
+    }
+  }
+
+  save();
+  document.getElementById('vaultOverlay').classList.remove('show');
+  renderVaultView();
+  toast('Vault Saved', `"${title}" stored successfully on device.`, 'success');
+});
+
+// Voice Recorder logic
+document.getElementById('btnRecordVoice')?.addEventListener('click', async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    
+    mediaRecorder.ondataavailable = e => {
+      if(e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(audioChunks, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        currentAudioBase64 = reader.result;
+        const player = document.getElementById('vaultAudioPlayer');
+        player.src = currentAudioBase64;
+        document.getElementById('voiceAudioPlayerWrap').style.display = 'block';
+        toast('Voice Note Recorded', 'Audio saved to draft.', 'success');
+      };
+      reader.readAsDataURL(blob);
+    };
+
+    mediaRecorder.start();
+    document.getElementById('btnRecordVoice').style.display = 'none';
+    document.getElementById('btnStopRecordVoice').style.display = 'inline-flex';
+    
+    recSeconds = 0;
+    document.getElementById('voiceRecTimer').textContent = '00:00';
+    recInterval = setInterval(() => {
+      recSeconds++;
+      const m = String(Math.floor(recSeconds / 60)).padStart(2, '0');
+      const s = String(recSeconds % 60).padStart(2, '0');
+      document.getElementById('voiceRecTimer').textContent = `${m}:${s}`;
+    }, 1000);
+
+  } catch(err) {
+    toast('Microphone Permission', 'Could not access microphone.', 'danger');
+  }
+});
+
+document.getElementById('btnStopRecordVoice')?.addEventListener('click', () => {
+  if(mediaRecorder && mediaRecorder.state !== 'inactive'){
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  }
+  clearInterval(recInterval);
+  document.getElementById('btnRecordVoice').style.display = 'inline-flex';
+  document.getElementById('btnStopRecordVoice').style.display = 'none';
+});
+
+document.getElementById('voiceFileInput')?.addEventListener('change', e => {
+  const file = e.target.files?.[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    currentAudioBase64 = evt.target.result;
+    const player = document.getElementById('vaultAudioPlayer');
+    player.src = currentAudioBase64;
+    document.getElementById('voiceAudioPlayerWrap').style.display = 'block';
+    toast('Audio File Uploaded', file.name, 'success');
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('pictureFileInput')?.addEventListener('change', e => {
+  const file = e.target.files?.[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    currentPictureBase64 = evt.target.result;
+    const preview = document.getElementById('vaultPicturePreview');
+    preview.src = currentPictureBase64;
+    document.getElementById('picturePreviewWrap').style.display = 'block';
+    toast('Photo Attached', file.name, 'success');
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('btnRemovePicture')?.addEventListener('click', () => {
+  currentPictureBase64 = null;
+  document.getElementById('picturePreviewWrap').style.display = 'none';
+});
+
+document.getElementById('btnDeleteVaultEntry')?.addEventListener('click', () => {
+  const id = document.getElementById('vaultId').value;
+  if(!confirm('Delete this Vault entry?')) return;
+  state.vaultEntries = (state.vaultEntries || []).filter(e => e.id !== id);
+  save();
+  document.getElementById('vaultOverlay').classList.remove('show');
+  renderVaultView();
+  toast('Deleted', 'Vault entry removed.', 'info');
+});
+
+window.sendVaultEmail = function(entryId){
+  const entry = (state.vaultEntries || []).find(e => e.id === entryId);
+  if(!entry) return;
+  const client = state.clocks.find(c => c.id === entry.clientId);
+  const emailAddr = (client?.contacts || []).find(m => m.type === 'email')?.value || '';
+  
+  const subject = encodeURIComponent(`[Meeting Recap] ${entry.title}`);
+  const bodyText = `Hi ${client ? client.name : 'there'},\n\nHere is the meeting recap & reference note:\n\n${entry.title}\n${entry.quote ? '"' + entry.quote + '"\n\n' : ''}${entry.body}\n\nBest regards,\n${state.profile.name || ''}`;
+  
+  window.open(`mailto:${emailAddr}?subject=${subject}&body=${encodeURIComponent(bodyText)}`, '_blank');
+};
+
+window.copyVaultText = function(entryId){
+  const entry = (state.vaultEntries || []).find(e => e.id === entryId);
+  if(!entry) return;
+  const text = `📌 *${entry.title}*\n${entry.quote ? '💬 "' + entry.quote + '"\n' : ''}${entry.body}`;
+  navigator.clipboard.writeText(text).then(() => {
+    toast('Copied to Clipboard!', 'Note formatted for WhatsApp/Messenger/DM.', 'success');
+  });
+};
+
 /* ---- JUMP TO TAB HELPER ---- */
 window.jumpToTab = function(tabName){
   const btn = suiteNav.querySelector(`[data-tab="${tabName}"]`);
@@ -2218,6 +2640,7 @@ function renderAll(){
   renderHubView();
   renderPlatformGrid();
   renderGmailPanel();
+  renderVaultView();
 }
 function init(){
   buildQACatChips();renderAll();updateQuickLinks();
