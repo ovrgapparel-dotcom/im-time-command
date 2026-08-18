@@ -460,7 +460,9 @@ tbody td{padding:.7rem .9rem;font-size:.76rem;}
       </div>
       <div class="t" id="primaryTime">--:--</div>
     </div>
-    <div style="display:flex;gap:.4rem;align-items:center;">
+    <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;">
+      <a href="https://imi-mnemonic-compass.vercel.app/" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="border-color:rgba(245,158,11,.35);color:#F59E0B;" title="Launch iM Mnemonic Compass"><i class="fa-solid fa-compass" style="color:#F59E0B;"></i> iMi Compass</a>
+      <a href="https://thelosttransition.com/?ref=virgile" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="border-color:rgba(167,139,250,.35);color:#A78BFA;" title="Launch The Lost Transition"><i class="fa-solid fa-gem" style="color:#A78BFA;"></i> TLT</a>
       <button class="btn btn-ghost btn-sm" id="btnGcalQuick"><i class="fa-brands fa-google" style="color:#EA4335;"></i> Google Cal</button>
       <button class="icon-btn" id="btnHelp" title="Help"><i class="fa-solid fa-circle-question"></i></button>
       <button class="icon-btn" id="btnSettings" title="Settings"><i class="fa-solid fa-gear"></i></button>
@@ -629,7 +631,9 @@ tbody td{padding:.7rem .9rem;font-size:.76rem;}
             <div><h3>Quick Connections</h3><p>Jump to your calendars &amp; booking</p></div>
           </div>
           <div class="quick-links-grid" id="quickLinksGrid">
-            <a href="#" class="ql-btn" id="qlGcal" target="_blank"><span class="ql-icon i3d i3d-sm" style="background:linear-gradient(145deg,#ea4335,#b31412);box-shadow:2px 3px 8px rgba(234,67,53,.4);color:#fff;"><i class="fa-brands fa-google"></i></span>Google Calendar</a>
+            <a href="https://imi-mnemonic-compass.vercel.app/" target="_blank" rel="noopener" class="ql-btn"><span class="ql-icon i3d i3d-sm" style="background:linear-gradient(145deg,#f59e0b,#d97706);box-shadow:2px 3px 8px rgba(245,158,11,.4);color:#fff;"><i class="fa-solid fa-compass"></i></span>iMi Compass</a>
+            <a href="https://thelosttransition.com/?ref=virgile" target="_blank" rel="noopener" class="ql-btn"><span class="ql-icon i3d i3d-sm" style="background:linear-gradient(145deg,#a78bfa,#6d28d9);box-shadow:2px 3px 8px rgba(167,139,250,.4);color:#fff;"><i class="fa-solid fa-gem"></i></span>TLT Portal</a>
+            <a href="#" class="ql-btn" id="qlGcal" target="_blank"><span class="ql-icon i3d i3d-sm" style="background:linear-gradient(145deg,#ea4335,#b31412);box-shadow:2px 3px 8px rgba(234,67,53,.4);color:#fff;"><i class="fa-brands fa-google"></i></span>Google Cal</a>
             <a href="#" class="ql-btn" id="qlCalendly" target="_blank"><span class="ql-icon i3d i3d-sm" style="background:linear-gradient(145deg,#4a6cf7,#2e4cdd);box-shadow:2px 3px 8px rgba(74,108,247,.4);color:#fff;font-size:.7rem;font-weight:700;">Ca</span>Calendly</a>
             <button class="ql-btn" id="qlNewEvent"><span class="ql-icon i3d i3d-sm i3d-blue"><i class="fa-solid fa-calendar-plus"></i></span>New Event</button>
             <button class="ql-btn" id="qlExportIcs"><span class="ql-icon i3d i3d-sm i3d-slate"><i class="fa-solid fa-file-export"></i></span>Export .ics</button>
