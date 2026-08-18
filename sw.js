@@ -1,4 +1,4 @@
-const CACHE = 'imt-v1';
+const CACHE = 'imt-v3';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -8,26 +8,36 @@ const PRECACHE = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE)));
-  self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks =>
-    Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
-  self.clients.claim();
+  e.waitUntil(
+    caches.keys().then(ks =>
+      Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
+  const url = e.request.url;
+  // Bypass service worker for Chrome extensions and cross-origin CDNs (FontAwesome, Google Fonts, etc.)
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return;
+  if (!url.startsWith(self.location.origin)) return;
+
   e.respondWith(
-    caches.match(e.request).then(cached => cached ||
-      fetch(e.request).then(res => {
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (!res || res.status !== 200 || res.type !== 'basic') {
+          return res;
+        }
         const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
+        caches.open(CACHE).then(c => c.put(e.request, clone)).catch(() => {});
         return res;
-      })
-    )
+      }).catch(() => caches.match('/index.html'));
+    })
   );
 });
