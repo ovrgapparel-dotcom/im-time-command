@@ -506,7 +506,7 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
     <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;">
       <a href="https://imi-mnemonic-compass.vercel.app/" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="border-color:rgba(245,158,11,.35);color:#F59E0B;" title="Launch iM Mnemonic Compass"><i class="fa-solid fa-compass" style="color:#F59E0B;"></i> iMi Compass</a>
       <a href="https://thelosttransition.com/?ref=virgile" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="border-color:rgba(167,139,250,.35);color:#A78BFA;" title="Launch The Lost Transition"><i class="fa-solid fa-gem" style="color:#A78BFA;"></i> TLT</a>
-      <button class="btn btn-ghost btn-sm" id="btnGcalQuick"><i class="fa-brands fa-google" style="color:#EA4335;"></i> Google Cal</button>
+      <button class="btn btn-ghost btn-sm" id="btnGcalQuick"><i class="fa-brands fa-google" style="color:#EA4335;"></i> <span data-i18n="google_cal">Google Cal</span></button>
       <button class="icon-btn" id="btnNotifBell" title="Notifications" style="position:relative;">
         <i class="fa-solid fa-bell"></i>
         <span id="notifBadge" style="position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:.6rem;font-weight:700;padding:2px 5px;border-radius:10px;display:none;">0</span>
@@ -553,16 +553,16 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
               <button class="icon-btn" id="btnPrev"><i class="fa-solid fa-chevron-left"></i></button>
               <div class="date-range" id="dateRange">—</div>
               <button class="icon-btn" id="btnNext"><i class="fa-solid fa-chevron-right"></i></button>
-              <button class="btn btn-ghost btn-sm" id="btnToday">Today</button>
+              <button class="btn btn-ghost btn-sm" id="btnToday" data-i18n="today">Today</button>
             </div>
             <div class="view-toggle">
-              <button id="viewDayBtn">Day</button>
-              <button id="viewWeekBtn" class="active">Week</button>
+              <button id="viewDayBtn" data-i18n="view_day">Day</button>
+              <button id="viewWeekBtn" class="active" data-i18n="view_week">Week</button>
             </div>
             <div style="display:flex;gap:.3rem;flex-wrap:wrap;">
               <button class="btn btn-ghost btn-sm" id="btnIcsExport"><i class="fa-solid fa-file-arrow-down"></i> .ics</button>
-              <label class="btn btn-ghost btn-sm" style="cursor:pointer;"><i class="fa-solid fa-file-arrow-up"></i> Import<input type="file" id="icsImportInput" accept=".ics" style="display:none;"></label>
-              <button class="btn btn-primary btn-sm" id="btnNewBlock"><i class="fa-solid fa-plus"></i> Block</button>
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer;"><i class="fa-solid fa-file-arrow-up"></i> <span data-i18n="btn_import">Import</span><input type="file" id="icsImportInput" accept=".ics" style="display:none;"></label>
+              <button class="btn btn-primary btn-sm" id="btnNewBlock"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_new_block">Block</span></button>
             </div>
           </div>
           <div class="grid-scroll"><div class="grid-wrap"><div class="time-gutter" id="timeGutter"></div><div class="days-cols" id="daysCols"></div></div></div>
@@ -575,13 +575,13 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
             <div style="display:flex;align-items:center;gap:.7rem;">
               <span class="i3d i3d-md i3d-blue"><i class="fa-solid fa-chart-line"></i></span>
               <div>
-                <h3 style="font-family:'Space Grotesk';font-size:1.15rem;" class="gradient-text">Planner Metrics &amp; Performance Analytics</h3>
-                <p style="font-size:.74rem;color:var(--text-mute);">Meeting frequencies, warm-up/cool-down buffers, contact velocity &amp; focus balance.</p>
+                <h3 style="font-family:'Space Grotesk';font-size:1.15rem;" class="gradient-text" data-i18n="metrics_title">Planner Metrics &amp; Performance Analytics</h3>
+                <p style="font-size:.74rem;color:var(--text-mute);" data-i18n="metrics_sub">Meeting frequencies, warm-up/cool-down buffers, contact velocity &amp; focus balance.</p>
               </div>
             </div>
             <div style="display:flex;gap:.35rem;" id="metricsRangeBtns">
-              <button class="btn btn-ghost btn-sm active" id="btnMetricsRangeWeek">This Week</button>
-              <button class="btn btn-ghost btn-sm" id="btnMetricsRangeAll">All Time</button>
+              <button class="btn btn-ghost btn-sm active" id="btnMetricsRangeWeek" data-i18n="this_week">This Week</button>
+              <button class="btn btn-ghost btn-sm" id="btnMetricsRangeAll" data-i18n="all_time">All Time</button>
             </div>
           </div>
 
@@ -591,28 +591,28 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
               <span class="i3d i3d-sm i3d-blue"><i class="fa-solid fa-calendar-check"></i></span>
               <div>
                 <div class="sc-num" id="pmTotalMeetings">0</div>
-                <div class="sc-label">Total Meetings (<span id="pmTotalHours">0h</span>)</div>
+                <div class="sc-label" data-i18n="total_meetings">Total Meetings</div>
               </div>
             </div>
             <div class="stat-card">
               <span class="i3d i3d-sm i3d-orange"><i class="fa-solid fa-fire"></i></span>
               <div>
                 <div class="sc-num" id="pmAvgWarmup">15m</div>
-                <div class="sc-label">Avg. Warm-Up Prep Time</div>
+                <div class="sc-label" data-i18n="avg_warmup">Avg. Warm-Up Prep Time</div>
               </div>
             </div>
             <div class="stat-card">
               <span class="i3d i3d-sm i3d-green"><i class="fa-solid fa-snowflake"></i></span>
               <div>
                 <div class="sc-num" id="pmAvgCooldown">20m</div>
-                <div class="sc-label">Avg. Cool-Down Buffer</div>
+                <div class="sc-label" data-i18n="avg_cooldown">Avg. Cool-Down Buffer</div>
               </div>
             </div>
             <div class="stat-card">
               <span class="i3d i3d-sm i3d-purple"><i class="fa-solid fa-user-group"></i></span>
               <div>
                 <div class="sc-num" id="pmTopPartner" style="font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">—</div>
-                <div class="sc-label">Top Contact Partner</div>
+                <div class="sc-label" data-i18n="top_contact">Top Contact Partner</div>
               </div>
             </div>
           </div>
@@ -623,7 +623,7 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
             <div style="background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;padding:1.1rem;">
               <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;">
                 <i class="fa-solid fa-chart-simple" style="color:var(--blue);font-size:.9rem;"></i>
-                <b style="font-size:.85rem;font-family:'Space Grotesk';">Meeting Frequency by Day</b>
+                <b style="font-size:.85rem;font-family:'Space Grotesk';" data-i18n="meeting_density">Meeting Frequency by Day</b>
               </div>
               <div style="height:220px;position:relative;"><canvas id="plannerDensityChartCanvas"></canvas></div>
             </div>
@@ -632,7 +632,7 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
             <div style="background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;padding:1.1rem;">
               <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;">
                 <i class="fa-solid fa-chart-pie" style="color:var(--purple);font-size:.9rem;"></i>
-                <b style="font-size:.85rem;font-family:'Space Grotesk';">Time Ratios (Meetings vs Buffers vs Deep Work)</b>
+                <b style="font-size:.85rem;font-family:'Space Grotesk';" data-i18n="time_ratios">Time Ratios (Meetings vs Buffers vs Deep Work)</b>
               </div>
               <div style="height:220px;position:relative;"><canvas id="plannerBufferChartCanvas"></canvas></div>
             </div>
@@ -641,7 +641,7 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
           <!-- Smart Insights & Buffer Recommendations -->
           <div class="overlap-callout" style="margin-top:.4rem;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(139,92,246,.06));border-color:rgba(59,130,246,.25);">
             <div class="ov-label" style="color:var(--blue);display:flex;align-items:center;gap:.4rem;">
-              <i class="fa-solid fa-brain" style="color:var(--purple);"></i> Schedule Pace &amp; Health Insights
+              <i class="fa-solid fa-brain" style="color:var(--purple);"></i> <span data-i18n="insights_title">Schedule Pace &amp; Health Insights</span>
             </div>
             <div style="font-size:.78rem;color:var(--text-dim);line-height:1.55;margin-top:.35rem;" id="plannerSmartInsightText">
               Calculating schedule buffers and meeting frequencies…
@@ -656,10 +656,10 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
         <div class="panel ps-card">
           <div class="ps-title">
             <span class="i3d i3d-sm i3d-blue"><i class="fa-solid fa-bolt"></i></span>
-            <div><h3>Quick Add</h3><p>Create a block instantly</p></div>
+            <div><h3 data-i18n="quick_add">Quick Add</h3><p data-i18n="quick_add_sub">Create a block instantly</p></div>
           </div>
           <div class="quick-add-form">
-            <input class="qa-input" type="text" id="qaTitle" placeholder="Event title…">
+            <input class="qa-input" type="text" id="qaTitle" placeholder="Event title…" data-i18n-ph="event_title_ph">
             <div class="qa-row">
               <input class="qa-input" type="date" id="qaDate">
               <input class="qa-input" type="time" id="qaTime" value="09:00">
@@ -668,9 +668,9 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
             <div class="qa-cat-chips" id="qaCatChips"></div>
             <div class="link-input-row">
               <i class="fa-solid fa-link"></i>
-              <input type="url" id="qaLink" placeholder="Meeting link (optional)…">
+              <input type="url" id="qaLink" placeholder="Meeting link (optional)…" data-i18n-ph="meeting_link_ph">
             </div>
-            <button class="btn btn-primary btn-sm" id="btnQuickAdd" style="align-self:flex-start;margin-top:.1rem;"><i class="fa-solid fa-plus"></i> Add to Calendar</button>
+            <button class="btn btn-primary btn-sm" id="btnQuickAdd" style="align-self:flex-start;margin-top:.1rem;"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_calendar">Add to Calendar</span></button>
           </div>
         </div>
 
@@ -678,7 +678,7 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
         <div class="panel ps-card">
           <div class="ps-title">
             <span class="i3d i3d-sm i3d-purple"><i class="fa-solid fa-list-check"></i></span>
-            <div><h3>Upcoming</h3><p>Next 7 days</p></div>
+            <div><h3 data-i18n="upcoming">Upcoming</h3><p data-i18n="next_7_days">Next 7 days</p></div>
           </div>
           <div class="upcoming-list" id="upcomingList"></div>
         </div>
@@ -687,7 +687,7 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
         <div class="panel ps-card" id="partnerAvailCard">
           <div class="ps-title">
             <span class="i3d i3d-sm i3d-green"><i class="fa-solid fa-users"></i></span>
-            <div><h3>Partner Availability</h3><p>Live status &amp; overlap window</p></div>
+            <div><h3 data-i18n="partner_availability">Partner Availability</h3><p data-i18n="live_status">Live status &amp; overlap window</p></div>
           </div>
           <div class="partner-avail-list" id="partnerAvailList"></div>
         </div>
@@ -696,15 +696,15 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
         <div class="panel ps-card">
           <div class="ps-title">
             <span class="i3d i3d-sm i3d-cyan"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
-            <div><h3>Quick Connections</h3><p>Jump to your calendars &amp; booking</p></div>
+            <div><h3 data-i18n="quick_connections">Quick Connections</h3><p data-i18n="jump_calendars">Jump to your calendars &amp; booking</p></div>
           </div>
           <div class="quick-links-grid" id="quickLinksGrid">
             <a href="https://imi-mnemonic-compass.vercel.app/" target="_blank" rel="noopener" class="ql-btn"><span class="ql-icon i3d i3d-sm" style="background:linear-gradient(145deg,#f59e0b,#d97706);box-shadow:2px 3px 8px rgba(245,158,11,.4);color:#fff;"><i class="fa-solid fa-compass"></i></span>iMi Compass</a>
             <a href="https://thelosttransition.com/?ref=virgile" target="_blank" rel="noopener" class="ql-btn"><span class="ql-icon i3d i3d-sm" style="background:linear-gradient(145deg,#a78bfa,#6d28d9);box-shadow:2px 3px 8px rgba(167,139,250,.4);color:#fff;"><i class="fa-solid fa-gem"></i></span>TLT Portal</a>
-            <a href="#" class="ql-btn" id="qlGcal" target="_blank"><span class="ql-icon i3d i3d-sm" style="background:linear-gradient(145deg,#ea4335,#b31412);box-shadow:2px 3px 8px rgba(234,67,53,.4);color:#fff;"><i class="fa-brands fa-google"></i></span>Google Cal</a>
+            <a href="#" class="ql-btn" id="qlGcal" target="_blank"><span class="ql-icon i3d i3d-sm" style="background:linear-gradient(145deg,#ea4335,#b31412);box-shadow:2px 3px 8px rgba(234,67,53,.4);color:#fff;"><i class="fa-brands fa-google"></i></span><span data-i18n="google_cal">Google Cal</span></a>
             <a href="#" class="ql-btn" id="qlCalendly" target="_blank"><span class="ql-icon i3d i3d-sm" style="background:linear-gradient(145deg,#4a6cf7,#2e4cdd);box-shadow:2px 3px 8px rgba(74,108,247,.4);color:#fff;font-size:.7rem;font-weight:700;">Ca</span>Calendly</a>
-            <button class="ql-btn" id="qlNewEvent"><span class="ql-icon i3d i3d-sm i3d-blue"><i class="fa-solid fa-calendar-plus"></i></span>New Event</button>
-            <button class="ql-btn" id="qlExportIcs"><span class="ql-icon i3d i3d-sm i3d-slate"><i class="fa-solid fa-file-export"></i></span>Export .ics</button>
+            <button class="ql-btn" id="qlNewEvent"><span class="ql-icon i3d i3d-sm i3d-blue"><i class="fa-solid fa-calendar-plus"></i></span><span data-i18n="new_event">New Event</span></button>
+            <button class="ql-btn" id="qlExportIcs"><span class="ql-icon i3d i3d-sm i3d-slate"><i class="fa-solid fa-file-export"></i></span><span data-i18n="export_ics">Export .ics</span></button>
           </div>
         </div>
       </div>
@@ -3566,17 +3566,42 @@ const I18N_DICT = {
     tab_calendar: "Calendar Hub",
     tab_messages: "Messages",
     tab_vault: "Vault",
+    tagline: "GLOBAL ENTREPRENEUR SUITE",
+    google_cal: "Google Cal",
     add_contact: "Add Contact",
     directory: "Directory",
-    new_block: "New Block",
-    export_ics: "Export .ics",
-    growth_xp: "Growth XP",
-    active_days: "Active Days",
-    level: "Level",
-    activities: "Activities",
     avail_available: "Available",
     avail_off: "Off Hours",
     avail_weekend: "Weekend / Off",
+    today: "Today",
+    view_day: "Day",
+    view_week: "Week",
+    btn_import: "Import",
+    btn_new_block: "Block",
+    metrics_title: "Planner Metrics & Performance Analytics",
+    metrics_sub: "Meeting frequencies, warm-up/cool-down buffers, contact velocity & focus balance.",
+    this_week: "This Week",
+    all_time: "All Time",
+    total_meetings: "Total Meetings",
+    avg_warmup: "Avg. Warm-Up Prep Time",
+    avg_cooldown: "Avg. Cool-Down Buffer",
+    top_contact: "Top Contact Partner",
+    meeting_density: "Meeting Frequency by Day",
+    time_ratios: "Time Ratios (Meetings vs Buffers vs Deep Work)",
+    insights_title: "Schedule Pace & Health Insights",
+    quick_add: "Quick Add",
+    quick_add_sub: "Create a block instantly",
+    event_title_ph: "Event title…",
+    meeting_link_ph: "Meeting link (optional)…",
+    btn_add_calendar: "Add to Calendar",
+    upcoming: "Upcoming",
+    next_7_days: "Next 7 days",
+    partner_availability: "Partner Availability",
+    live_status: "Live status & overlap window",
+    quick_connections: "Quick Connections",
+    jump_calendars: "Jump to your calendars & booking",
+    new_event: "New Event",
+    export_ics: "Export .ics",
     settings: "Settings",
     help: "Help & Guide"
   },
@@ -3587,17 +3612,42 @@ const I18N_DICT = {
     tab_calendar: "Centro de Calendario",
     tab_messages: "Mensajes",
     tab_vault: "Bóveda",
+    tagline: "SUITE PARA EMPRENDEDORES GLOBALES",
+    google_cal: "Google Cal",
     add_contact: "Agregar Contacto",
     directory: "Directorio",
-    new_block: "Nuevo Bloque",
-    export_ics: "Exportar .ics",
-    growth_xp: "XP de Crecimiento",
-    active_days: "Días Activos",
-    level: "Nivel",
-    activities: "Actividades",
     avail_available: "Disponible",
     avail_off: "Fuera de Horario",
     avail_weekend: "Fin de Semana",
+    today: "Hoy",
+    view_day: "Día",
+    view_week: "Semana",
+    btn_import: "Importar",
+    btn_new_block: "Bloque",
+    metrics_title: "Métricas del Planificador y Rendimiento",
+    metrics_sub: "Frecuencia de reuniones, preparación, buffers de descanso y balance de enfoque.",
+    this_week: "Esta Semana",
+    all_time: "Todo el Tiempo",
+    total_meetings: "Reuniones Totales",
+    avg_warmup: "Prep. Promedio",
+    avg_cooldown: "Buffer Promedio",
+    top_contact: "Contacto Principal",
+    meeting_density: "Frecuencia de Reuniones por Día",
+    time_ratios: "Distribución del Tiempo",
+    insights_title: "Análisis de Ritmo y Salud",
+    quick_add: "Agregar Rápido",
+    quick_add_sub: "Crear un bloque al instante",
+    event_title_ph: "Título del evento…",
+    meeting_link_ph: "Enlace de reunión (opcional)…",
+    btn_add_calendar: "Agregar al Calendario",
+    upcoming: "Próximos Eventos",
+    next_7_days: "Próximos 7 días",
+    partner_availability: "Disponibilidad de Socios",
+    live_status: "Estado en vivo y solapamiento",
+    quick_connections: "Conexiones Rápidas",
+    jump_calendars: "Acceso rápido a calendarios",
+    new_event: "Nuevo Evento",
+    export_ics: "Exportar .ics",
     settings: "Configuración",
     help: "Ayuda y Guía"
   },
@@ -3608,17 +3658,42 @@ const I18N_DICT = {
     tab_calendar: "Hub Calendrier",
     tab_messages: "Messages",
     tab_vault: "Coffre-Fort",
+    tagline: "SUITE ENTREPRENEUR MONDIAL",
+    google_cal: "Google Cal",
     add_contact: "Ajouter Contact",
     directory: "Répertoire",
-    new_block: "Nouveau Bloc",
-    export_ics: "Exporter .ics",
-    growth_xp: "XP de Croissance",
-    active_days: "Jours Actifs",
-    level: "Niveau",
-    activities: "Activités",
     avail_available: "Disponible",
     avail_off: "Hors Heures",
     avail_weekend: "Week-end / Off",
+    today: "Aujourd'hui",
+    view_day: "Jour",
+    view_week: "Semaine",
+    btn_import: "Importer",
+    btn_new_block: "Bloc",
+    metrics_title: "Métriques du Planificateur & Performance",
+    metrics_sub: "Fréquence des réunions, temps de préparation, tampons de récupération & équilibre.",
+    this_week: "Cette Semaine",
+    all_time: "Tout le Temps",
+    total_meetings: "Total Réunions",
+    avg_warmup: "Préparation Moyenne",
+    avg_cooldown: "Tampon Moyen",
+    top_contact: "Partenaire Principal",
+    meeting_density: "Fréquence des Réunions par Jour",
+    time_ratios: "Répartition du Temps",
+    insights_title: "Analyse du Rythme et Santé",
+    quick_add: "Ajout Rapide",
+    quick_add_sub: "Créer un bloc instantanément",
+    event_title_ph: "Titre de l'événement…",
+    meeting_link_ph: "Lien de réunion (optionnel)…",
+    btn_add_calendar: "Ajouter au Calendrier",
+    upcoming: "À Venir",
+    next_7_days: "7 prochains jours",
+    partner_availability: "Disponibilité des Partenaires",
+    live_status: "Statut en direct et chevauchement",
+    quick_connections: "Connexions Rapides",
+    jump_calendars: "Accès rapide aux calendriers",
+    new_event: "Nouvel Événement",
+    export_ics: "Exporter .ics",
     settings: "Paramètres",
     help: "Aide et Guide"
   },
@@ -3629,17 +3704,42 @@ const I18N_DICT = {
     tab_calendar: "Kalender-Hub",
     tab_messages: "Nachrichten",
     tab_vault: "Tresor",
+    tagline: "GLOBAL ENTREPRENEUR SUITE",
+    google_cal: "Google Kalender",
     add_contact: "Kontakt Hinzufügen",
     directory: "Kontakte",
-    new_block: "Neuer Block",
-    export_ics: ".ics Exportieren",
-    growth_xp: "Wachstums-XP",
-    active_days: "Aktive Tage",
-    level: "Level",
-    activities: "Aktivitäten",
     avail_available: "Verfügbar",
     avail_off: "Außerhalb",
     avail_weekend: "Wochenende",
+    today: "Heute",
+    view_day: "Tag",
+    view_week: "Woche",
+    btn_import: "Importieren",
+    btn_new_block: "Block",
+    metrics_title: "Planer-Metriken & Leistungsanalyse",
+    metrics_sub: "Meeting-Frequenzen, Vorbereitungszeiten, Erholungs-Puffer & Fokus-Balance.",
+    this_week: "Diese Woche",
+    all_time: "Gesamte Zeit",
+    total_meetings: "Meetings Gesamt",
+    avg_warmup: "Avg. Vorbereitung",
+    avg_cooldown: "Avg. Erholungs-Puffer",
+    top_contact: "Top-Ansprechpartner",
+    meeting_density: "Meeting-Frequenz pro Tag",
+    time_ratios: "Zeitverteilung",
+    insights_title: "Zeitplan-Tempo & Gesundheit",
+    quick_add: "Schnell Hinzufügen",
+    quick_add_sub: "Sofort einen Block erstellen",
+    event_title_ph: "Titel der Veranstaltung…",
+    meeting_link_ph: "Meeting-Link (optional)…",
+    btn_add_calendar: "Zum Kalender Hinzufügen",
+    upcoming: "Demnächst",
+    next_7_days: "Nächste 7 Tage",
+    partner_availability: "Partner-Verfügbarkeit",
+    live_status: "Live-Status & Überlappung",
+    quick_connections: "Schnellverbindungen",
+    jump_calendars: "Direkt zu Ihren Kalendern",
+    new_event: "Neues Ereignis",
+    export_ics: ".ics Exportieren",
     settings: "Einstellungen",
     help: "Hilfe & Anleitung"
   },
@@ -3650,17 +3750,42 @@ const I18N_DICT = {
     tab_calendar: "Hub de Calendário",
     tab_messages: "Mensagens",
     tab_vault: "Cofre",
+    tagline: "SUITE PARA EMPREENDEDORES GLOBAIS",
+    google_cal: "Google Cal",
     add_contact: "Adicionar Contato",
     directory: "Diretório",
-    new_block: "Novo Bloco",
-    export_ics: "Exportar .ics",
-    growth_xp: "XP de Crescimento",
-    active_days: "Dias Ativos",
-    level: "Nível",
-    activities: "Atividades",
     avail_available: "Disponível",
     avail_off: "Fora de Horário",
     avail_weekend: "Fim de Semana",
+    today: "Hoje",
+    view_day: "Dia",
+    view_week: "Semana",
+    btn_import: "Importar",
+    btn_new_block: "Bloco",
+    metrics_title: "Métricas do Planejador & Análise de Desempenho",
+    metrics_sub: "Frequência de reuniões, tempo de preparação, buffers e equilíbrio de foco.",
+    this_week: "Esta Semana",
+    all_time: "Todo o Tempo",
+    total_meetings: "Reuniões Totais",
+    avg_warmup: "Média de Preparação",
+    avg_cooldown: "Buffer Médio",
+    top_contact: "Contato Principal",
+    meeting_density: "Frequência de Reuniões por Dia",
+    time_ratios: "Distribuição do Tempo",
+    insights_title: "Análise de Ritmo e Saúde",
+    quick_add: "Adicionar Rápido",
+    quick_add_sub: "Criar um bloco instantaneamente",
+    event_title_ph: "Título do evento…",
+    meeting_link_ph: "Link da reunião (opcional)…",
+    btn_add_calendar: "Adicionar ao Calendário",
+    upcoming: "Próximos",
+    next_7_days: "Próximos 7 dias",
+    partner_availability: "Disponibilidade de Parceiros",
+    live_status: "Status ao vivo e sobreposição",
+    quick_connections: "Conexões Rápidas",
+    jump_calendars: "Acesso rápido aos calendários",
+    new_event: "Novo Evento",
+    export_ics: "Exportar .ics",
     settings: "Configurações",
     help: "Ajuda e Guia"
   },
@@ -3671,17 +3796,42 @@ const I18N_DICT = {
     tab_calendar: "日历中心",
     tab_messages: "消息中心",
     tab_vault: "资料库",
+    tagline: "全球创业者专业套件",
+    google_cal: "谷歌日历",
     add_contact: "添加联系人",
     directory: "通讯录",
-    new_block: "新建日程",
-    export_ics: "导出 .ics",
-    growth_xp: "增长 XP",
-    active_days: "活跃天数",
-    level: "等级",
-    activities: "活动记录",
     avail_available: "空闲",
     avail_off: "非工作时间",
     avail_weekend: "周末 / 休息",
+    today: "今天",
+    view_day: "日视图",
+    view_week: "周视图",
+    btn_import: "导入",
+    btn_new_block: "新建日程",
+    metrics_title: "日程分析与性能指标",
+    metrics_sub: "会议频率、准备缓冲、联系人互动与专注平衡分析。",
+    this_week: "本周",
+    all_time: "所有时间",
+    total_meetings: "会议总数",
+    avg_warmup: "平均会前准备",
+    avg_cooldown: "平均会后缓冲",
+    top_contact: "主要合作联系人",
+    meeting_density: "每日会议频率",
+    time_ratios: "时间分配比例",
+    insights_title: "日程节奏与健康分析",
+    quick_add: "快速添加",
+    quick_add_sub: "即刻创建日程块",
+    event_title_ph: "日程标题…",
+    meeting_link_ph: "会议链接（可选）…",
+    btn_add_calendar: "添加到日历",
+    upcoming: "近期日程",
+    next_7_days: "未来 7 天",
+    partner_availability: "合作伙伴在线状态",
+    live_status: "实时状态与重叠工作时间",
+    quick_connections: "快捷链接",
+    jump_calendars: "快速跳转日历与预约",
+    new_event: "新建日程",
+    export_ics: "导出 .ics",
     settings: "设置",
     help: "帮助与指南"
   },
@@ -3692,17 +3842,42 @@ const I18N_DICT = {
     tab_calendar: "カレンダーハブ",
     tab_messages: "メッセージ",
     tab_vault: "保管庫",
+    tagline: "グローバル起業家スイート",
+    google_cal: "Googleカレンダー",
     add_contact: "連絡先を追加",
     directory: "連絡先",
-    new_block: "新規ブロック",
-    export_ics: ".ics エクスポート",
-    growth_xp: "成長 XP",
-    active_days: "アクティブ日数",
-    level: "レベル",
-    activities: "アクティビティ",
     avail_available: "利用可能",
     avail_off: "時間外",
     avail_weekend: "週末 / 休み",
+    today: "今日",
+    view_day: "日",
+    view_week: "週",
+    btn_import: "インポート",
+    btn_new_block: "ブロック",
+    metrics_title: "プランナーメトリクス＆パフォーマンス分析",
+    metrics_sub: "会議頻度、ウォームアップ/クールダウンバッファー、集中バランス分析。",
+    this_week: "今週",
+    all_time: "全期間",
+    total_meetings: "総会議数",
+    avg_warmup: "平均事前準備時間",
+    avg_cooldown: "平均クールダウン",
+    top_contact: "主要コンタクト",
+    meeting_density: "日別会議頻度",
+    time_ratios: "時間配分比率",
+    insights_title: "スケジュールペース＆ヘルス分析",
+    quick_add: "クイック追加",
+    quick_add_sub: "すぐにブロックを作成",
+    event_title_ph: "イベントタイトル…",
+    meeting_link_ph: "会議リンク（任意）…",
+    btn_add_calendar: "カレンダーに追加",
+    upcoming: "今後の予定",
+    next_7_days: "今後7日間",
+    partner_availability: "パートナーの空き状況",
+    live_status: "リアルタイムステータス＆時間重複",
+    quick_connections: "クイック接続",
+    jump_calendars: "カレンダー・予約へジャンプ",
+    new_event: "新規イベント",
+    export_ics: ".ics エクスポート",
     settings: "設定",
     help: "ヘルプ＆ガイド"
   },
@@ -3713,17 +3888,42 @@ const I18N_DICT = {
     tab_calendar: "مركز التقويم",
     tab_messages: "الرسائل",
     tab_vault: "الخزنة",
+    tagline: "مجموعة ريادة الأعمال العالمية",
+    google_cal: "تقويم جوجل",
     add_contact: "إضافة جهة اتصال",
     directory: "دليل الاتصال",
-    new_block: "كتلة جديدة",
-    export_ics: "تصدير .ics",
-    growth_xp: "نقاط النمو",
-    active_days: "الأيام النشطة",
-    level: "المستوى",
-    activities: "الأنشطة",
     avail_available: "متاح",
     avail_off: "خارج ساعات العمل",
     avail_weekend: "عطلة نهاية الأسبوع",
+    today: "اليوم",
+    view_day: "يوم",
+    view_week: "أسبوع",
+    btn_import: "استيراد",
+    btn_new_block: "كتلة",
+    metrics_title: "تحليلات الأداء ومقاييس المخطط",
+    metrics_sub: "تكرار الاجتماعات، التحضير، فترات الراحة وتوازن التركيز.",
+    this_week: "هذا الأسبوع",
+    all_time: "كل الأوقات",
+    total_meetings: "إجمالي الاجتماعات",
+    avg_warmup: "متوسط وقت التحضير",
+    avg_cooldown: "متوسط فترة الراحة",
+    top_contact: "الشريك الأكثر تواصلاً",
+    meeting_density: "تكرار الاجتماعات حسب اليوم",
+    time_ratios: "توزيع الوقت",
+    insights_title: "تحليلات وتيرة الجدول والراحة",
+    quick_add: "إضافة سريعة",
+    quick_add_sub: "إنشاء كتلة فوراً",
+    event_title_ph: "عنوان الحدث…",
+    meeting_link_ph: "رابط الاجتماع (اختياري)…",
+    btn_add_calendar: "إضافة إلى التقويم",
+    upcoming: "الفعاليات القادمة",
+    next_7_days: "الأيام الـ 7 القادمة",
+    partner_availability: "تفرغ الشركاء",
+    live_status: "الحالة المباشرة ونطاق التداخل",
+    quick_connections: "روابط سريعة",
+    jump_calendars: "الانتقال السريع إلى التقويمات",
+    new_event: "حدث جديد",
+    export_ics: "تصدير .ics",
     settings: "الإعدادات",
     help: "المساعدة والدليل"
   }
