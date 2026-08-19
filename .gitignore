@@ -2,5 +2,8 @@ node_modules/
 .DS_Store
 .vercel
 *.log
-
-.vercel
+.gradle/
+android-twa/.gradle/
+android-twa/app/build/
+android-twa/build/
+*.lock
