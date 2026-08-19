@@ -1,7 +1,9 @@
-const CACHE = 'imt-v11';
+const CACHE = 'imt-v12';
 const PRECACHE = [
   '/',
   '/index.html',
+  '/privacy.html',
+  '/terms.html',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png'

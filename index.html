@@ -948,9 +948,13 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
 
   <!-- FOOTER -->
   <div class="panel footer-bar">
-    <div style="display:flex;align-items:center;gap:.6rem;">
+    <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
       <img src="assets/im_logo_blue.png?v=1.0.7" alt="iM" style="width:24px;height:24px;border-radius:8px;">
-      <span><b>I MAKE IMAGE — FUELED CREATION</b> · Data saved locally in your browser.</span>
+      <span style="font-size:.72rem;color:var(--text-mute);"><b>I MAKE IMAGE — FUELED CREATION</b> · Local Data Only</span>
+      <span style="color:var(--border);">|</span>
+      <a href="privacy.html" target="_blank" style="color:var(--blue);font-size:.7rem;text-decoration:none;font-weight:600;"><i class="fa-solid fa-shield-halved"></i> Privacy Policy</a>
+      <span style="color:var(--border);">|</span>
+      <a href="terms.html" target="_blank" style="color:var(--gold);font-size:.7rem;text-decoration:none;font-weight:600;"><i class="fa-solid fa-file-contract"></i> Terms of Use</a>
     </div>
     <div class="actions">
       <button class="btn btn-ghost btn-sm" id="btnExportJson"><i class="fa-solid fa-download"></i> Backup</button>
