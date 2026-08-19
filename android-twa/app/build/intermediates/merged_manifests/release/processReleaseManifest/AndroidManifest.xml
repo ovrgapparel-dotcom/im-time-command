@@ -22,13 +22,13 @@
      the abbreviated format.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="imi.imtimecommand.app"
-    android:versionCode="1"
-    android:versionName="1" >
+    package="com.imi.timecommand"
+    android:versionCode="14"
+    android:versionName="1.1.2" >
 
     <uses-sdk
         android:minSdkVersion="21"
-        android:targetSdkVersion="35" />
+        android:targetSdkVersion="36" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -43,13 +43,13 @@
     </queries>
 
     <permission
-        android:name="imi.imtimecommand.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        android:name="com.imi.timecommand.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
         android:protectionLevel="signature" />
 
-    <uses-permission android:name="imi.imtimecommand.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+    <uses-permission android:name="com.imi.timecommand.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 
     <application
-        android:name="imi.imtimecommand.app.Application"
+        android:name="com.imi.timecommand.Application"
         android:allowBackup="true"
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:extractNativeLibs="true"
@@ -84,7 +84,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="imi.imtimecommand.app.LauncherActivity"
+            android:name="com.imi.timecommand.LauncherActivity"
             android:alwaysRetainTaskState="true"
             android:exported="true"
             android:label="@string/launcherName" >
@@ -163,7 +163,7 @@
         </provider>
 
         <service
-            android:name="imi.imtimecommand.app.DelegationService"
+            android:name="com.imi.timecommand.DelegationService"
             android:enabled="@bool/enableNotification"
             android:exported="@bool/enableNotification" >
             <meta-data
@@ -181,7 +181,7 @@
 
         <provider
             android:name="androidx.startup.InitializationProvider"
-            android:authorities="imi.imtimecommand.app.androidx-startup"
+            android:authorities="com.imi.timecommand.androidx-startup"
             android:exported="false" >
             <meta-data
                 android:name="androidx.emoji2.text.EmojiCompatInitializer"

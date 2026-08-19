@@ -29,7 +29,7 @@
     <string name="launchUrl" translatable="false">https://im-time-command.vercel.app/</string>
     <string name="launcherName" translatable="false">iM Time</string>
     <string name="orientation" translatable="false">portrait</string>
-    <string name="providerAuthority" translatable="false">imi.imtimecommand.app.fileprovider</string>
+    <string name="providerAuthority" translatable="false">com.imi.timecommand.fileprovider</string>
     <string name="shortcut_name_0" translatable="false">Open Planner</string>
     <string name="shortcut_name_1" translatable="false">Open Tracker</string>
     <string name="shortcut_short_name_0" translatable="false">Planner</string>

@@ -3,8 +3,8 @@
 # min_api: 21
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: a228334
-# pg_map_hash: SHA-256 a22833475c4d3ee03418d19d6599b3081ceed5861730bf77c294f29f815da33d
+# pg_map_id: 394374d
+# pg_map_hash: SHA-256 394374d51d04b869da11cf3480d802d0fd69cce4f6f3a8709530c81dfe89f433
 android.support.customtabs.ICustomTabsCallback -> a.a:
 # {"id":"sourceFile","fileName":"ICustomTabsCallback.java"}
     java.lang.String DESCRIPTOR -> a
@@ -24606,15 +24606,15 @@ com.google.common.collect.UnmodifiableListIterator -> M.s:
     1:4:void <init>():34:34 -> <init>
     1:6:void add(java.lang.Object):46:46 -> add
     1:6:void set(java.lang.Object):59:59 -> set
-imi.imtimecommand.app.Application -> imi.imtimecommand.app.Application:
+com.imi.timecommand.Application -> com.imi.timecommand.Application:
 # {"id":"sourceFile","fileName":"Application.java"}
     1:4:void <init>():20:20 -> <init>
     1:4:void onCreate():26:26 -> onCreate
-imi.imtimecommand.app.DelegationService -> imi.imtimecommand.app.DelegationService:
+com.imi.timecommand.DelegationService -> com.imi.timecommand.DelegationService:
 # {"id":"sourceFile","fileName":"DelegationService.java"}
     1:4:void <init>():5:5 -> <init>
     1:4:void onCreate():9:9 -> onCreate
-imi.imtimecommand.app.LauncherActivity -> imi.imtimecommand.app.LauncherActivity:
+com.imi.timecommand.LauncherActivity -> com.imi.timecommand.LauncherActivity:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     1:4:void <init>():25:25 -> <init>
     1:5:android.net.Uri getLaunchingUrl():48:48 -> i

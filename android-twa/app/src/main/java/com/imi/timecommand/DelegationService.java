@@ -1,4 +1,4 @@
-package imi.imtimecommand.app;
+package com.imi.timecommand;
 
 
 

@@ -40,7 +40,7 @@
     <!-- Value from default config. -->
     <string name="orientation" translatable="false">portrait</string>
     <!-- Value from default config. -->
-    <string name="providerAuthority" translatable="false">imi.imtimecommand.app.fileprovider</string>
+    <string name="providerAuthority" translatable="false">com.imi.timecommand.fileprovider</string>
     <!-- Value from default config. -->
     <string name="shortcut_name_0" translatable="false">Open Planner</string>
     <!-- Value from default config. -->

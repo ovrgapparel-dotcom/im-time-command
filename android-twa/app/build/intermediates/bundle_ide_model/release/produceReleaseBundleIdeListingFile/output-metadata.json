@@ -4,7 +4,7 @@
     "type": "BUNDLE",
     "kind": "RegularFile"
   },
-  "applicationId": "imi.imtimecommand.app",
+  "applicationId": "com.imi.timecommand",
   "variantName": "release",
   "elements": [
     {
