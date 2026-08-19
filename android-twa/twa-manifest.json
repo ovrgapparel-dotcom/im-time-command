@@ -1,0 +1,60 @@
+{
+  "packageId": "imi.imtimecommand.app",
+  "host": "im-time-command.vercel.app",
+  "name": "iM Time Command",
+  "launcherName": "iM Time",
+  "display": "standalone",
+  "themeColor": "#C9A84C",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#0D1117",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://im-time-command.vercel.app/icons/icon-512.png",
+  "maskableIconUrl": "https://im-time-command.vercel.app/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./im_time_command.jks",
+    "alias": "im_tc"
+  },
+  "appVersionName": "1.0.5",
+  "appVersionCode": 7,
+  "shortcuts": [
+    {
+      "name": "Open Planner",
+      "shortName": "Planner",
+      "url": "https://im-time-command.vercel.app/?tab=agenda",
+      "chosenIconUrl": "https://im-time-command.vercel.app/icons/icon-192.png"
+    },
+    {
+      "name": "Open Tracker",
+      "shortName": "Tracker",
+      "url": "https://im-time-command.vercel.app/?tab=tracker",
+      "chosenIconUrl": "https://im-time-command.vercel.app/icons/icon-192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://im-time-command.vercel.app/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://im-time-command.vercel.app/",
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1"
+}

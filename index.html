@@ -1453,17 +1453,38 @@ const PRINCIPLES_DATA=[
   {name:'Think Like a Business',icon:'fa-briefcase',color:'#6366F1',skills:['Budgeting','Basic Investing','Bootstrapping']}
 ];
 const PRINCIPLE_ICON_COLORS=['i3d-blue','i3d-cyan','i3d-green','i3d-orange','i3d-purple','i3d-coral','i3d-indigo'];
+/* ---- NATIVE DEEP LINK HELPER ----
+   On mobile: tries the native app URI first (e.g. whatsapp://); if the app is
+   not installed the browser stays active and a 900ms timer fires the web fallback.
+   On desktop (no touch): goes straight to the web URL.
+*/
+function openNativeDeepLink(appUri, webUrl){
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
+  if(isMobile && appUri){
+    let fallbackFired = false;
+    const t = setTimeout(()=>{ fallbackFired=true; window.open(webUrl,'_blank'); }, 900);
+    // Attempt to open native app
+    window.location.href = appUri;
+    // If page stays visible after a tick the native app wasn't available
+    document.addEventListener('visibilitychange', function onVis(){
+      if(document.hidden){ clearTimeout(t); document.removeEventListener('visibilitychange',onVis); }
+    }, {once:true});
+  } else {
+    window.open(webUrl,'_blank');
+  }
+}
+
 const PLATFORMS=[
-  {name:'WhatsApp',icon:'fa-brands fa-whatsapp',color:'#25D366',icc:'background:linear-gradient(145deg,#2ecc71,#16a34a);box-shadow:2px 3px 8px rgba(22,163,74,.5);',url:'https://web.whatsapp.com',type:'Messaging'},
-  {name:'Messenger',icon:'fa-brands fa-facebook-messenger',color:'#0084FF',icc:'background:linear-gradient(145deg,#60a5fa,#1d4ed8);box-shadow:2px 3px 8px rgba(29,78,216,.5);',url:'https://www.messenger.com',type:'Messaging'},
-  {name:'Instagram',icon:'fa-brands fa-instagram',color:'#E91E63',icc:'background:linear-gradient(145deg,#f472b6,#9d174d);box-shadow:2px 3px 8px rgba(157,23,77,.5);',url:'https://www.instagram.com/direct/inbox/',type:'DMs'},
-  {name:'Telegram',icon:'fa-brands fa-telegram',color:'#2979FF',icc:'background:linear-gradient(145deg,#60a5fa,#1e40af);box-shadow:2px 3px 8px rgba(30,64,175,.5);',url:'https://web.telegram.org',type:'Messaging'},
-  {name:'Signal',icon:'fa-solid fa-lock',color:'#2979FF',icc:'background:linear-gradient(145deg,#6366f1,#3730a3);box-shadow:2px 3px 8px rgba(55,48,163,.5);',url:'https://signal.org/download',type:'Secure'},
-  {name:'LinkedIn',icon:'fa-brands fa-linkedin',color:'#0A66C2',icc:'background:linear-gradient(145deg,#3b82f6,#1d4ed8);box-shadow:2px 3px 8px rgba(29,78,216,.5);',url:'https://www.linkedin.com/messaging/',type:'Professional'},
-  {name:'X / Twitter',icon:'fa-brands fa-x-twitter',color:'#1DA1F2',icc:'background:linear-gradient(145deg,#64748b,#1e293b);box-shadow:2px 3px 8px rgba(30,41,59,.5);',url:'https://x.com/messages',type:'DMs'},
-  {name:'SMS',icon:'fa-solid fa-mobile-screen',color:'#10B981',icc:'background:linear-gradient(145deg,#34d399,#047857);box-shadow:2px 3px 8px rgba(4,120,87,.5);',url:'sms:',type:'Mobile'},
-  {name:'Slack',icon:'fa-brands fa-slack',color:'#611f69',icc:'background:linear-gradient(145deg,#a78bfa,#5b21b6);box-shadow:2px 3px 8px rgba(91,33,182,.5);',url:'https://app.slack.com',type:'Teams'},
-  {name:'Discord',icon:'fa-brands fa-discord',color:'#5865F2',icc:'background:linear-gradient(145deg,#818cf8,#3730a3);box-shadow:2px 3px 8px rgba(55,48,163,.5);',url:'https://discord.com/app',type:'Community'}
+  {name:'WhatsApp',icon:'fa-brands fa-whatsapp',color:'#25D366',icc:'background:linear-gradient(145deg,#2ecc71,#16a34a);box-shadow:2px 3px 8px rgba(22,163,74,.5);',url:'https://web.whatsapp.com',nativeUri:'whatsapp://',type:'Messaging'},
+  {name:'Messenger',icon:'fa-brands fa-facebook-messenger',color:'#0084FF',icc:'background:linear-gradient(145deg,#60a5fa,#1d4ed8);box-shadow:2px 3px 8px rgba(29,78,216,.5);',url:'https://www.messenger.com',nativeUri:'fb-messenger://',type:'Messaging'},
+  {name:'Instagram',icon:'fa-brands fa-instagram',color:'#E91E63',icc:'background:linear-gradient(145deg,#f472b6,#9d174d);box-shadow:2px 3px 8px rgba(157,23,77,.5);',url:'https://www.instagram.com/direct/inbox/',nativeUri:'instagram://direct-inbox',type:'DMs'},
+  {name:'Telegram',icon:'fa-brands fa-telegram',color:'#2979FF',icc:'background:linear-gradient(145deg,#60a5fa,#1e40af);box-shadow:2px 3px 8px rgba(30,64,175,.5);',url:'https://web.telegram.org',nativeUri:'tg://resolve',type:'Messaging'},
+  {name:'Signal',icon:'fa-solid fa-lock',color:'#2979FF',icc:'background:linear-gradient(145deg,#6366f1,#3730a3);box-shadow:2px 3px 8px rgba(55,48,163,.5);',url:'https://signal.org/download',nativeUri:'sgnl://',type:'Secure'},
+  {name:'LinkedIn',icon:'fa-brands fa-linkedin',color:'#0A66C2',icc:'background:linear-gradient(145deg,#3b82f6,#1d4ed8);box-shadow:2px 3px 8px rgba(29,78,216,.5);',url:'https://www.linkedin.com/messaging/',nativeUri:'linkedin://messaging',type:'Professional'},
+  {name:'X / Twitter',icon:'fa-brands fa-x-twitter',color:'#1DA1F2',icc:'background:linear-gradient(145deg,#64748b,#1e293b);box-shadow:2px 3px 8px rgba(30,41,59,.5);',url:'https://x.com/messages',nativeUri:'twitter://messages',type:'DMs'},
+  {name:'SMS',icon:'fa-solid fa-mobile-screen',color:'#10B981',icc:'background:linear-gradient(145deg,#34d399,#047857);box-shadow:2px 3px 8px rgba(4,120,87,.5);',url:'sms:',nativeUri:'sms:',type:'Mobile'},
+  {name:'Slack',icon:'fa-brands fa-slack',color:'#611f69',icc:'background:linear-gradient(145deg,#a78bfa,#5b21b6);box-shadow:2px 3px 8px rgba(91,33,182,.5);',url:'https://app.slack.com',nativeUri:'slack://',type:'Teams'},
+  {name:'Discord',icon:'fa-brands fa-discord',color:'#5865F2',icc:'background:linear-gradient(145deg,#818cf8,#3730a3);box-shadow:2px 3px 8px rgba(55,48,163,.5);',url:'https://discord.com/app',nativeUri:'discord://',type:'Community'}
 ];
 
 /* ---- SMART REPLY ENGINE ---- */
@@ -1896,17 +1917,17 @@ function renderClockStrip(){
 
 /* ---- CONTACT METHODS EDITOR ---- */
 const CONTACT_TYPES=[
-  {id:'phone',label:'Phone/Call',icon:'fa-phone',url:(v)=>`tel:${v}`,color:'#10B981',hbg:'rgba(16,185,129,.2)',hcol:'#10B981'},
-  {id:'whatsapp',label:'WhatsApp',icon:'fa-brands fa-whatsapp',url:(v)=>`https://wa.me/${v.replace(/\D/g,'')}`,color:'#25D366',hbg:'rgba(37,211,102,.2)',hcol:'#25D366'},
-  {id:'messenger',label:'Messenger',icon:'fa-brands fa-facebook-messenger',url:(v)=>`https://m.me/${v}`,color:'#0084FF',hbg:'rgba(0,132,255,.2)',hcol:'#0084FF'},
-  {id:'email',label:'Email',icon:'fa-envelope',url:(v)=>`mailto:${v}`,color:'#3B82F6',hbg:'rgba(59,130,246,.2)',hcol:'#3B82F6'},
-  {id:'instagram',label:'Instagram DM',icon:'fa-brands fa-instagram',url:(v)=>`https://ig.me/m/${v}`,color:'#E91E63',hbg:'rgba(233,30,99,.2)',hcol:'#E91E63'},
-  {id:'telegram',label:'Telegram',icon:'fa-brands fa-telegram',url:(v)=>`https://t.me/${v}`,color:'#2979FF',hbg:'rgba(41,121,255,.2)',hcol:'#2979FF'},
-  {id:'linkedin',label:'LinkedIn',icon:'fa-brands fa-linkedin',url:(v)=>`https://linkedin.com/in/${v}`,color:'#0A66C2',hbg:'rgba(10,102,194,.2)',hcol:'#0A66C2'},
-  {id:'signal',label:'Signal',icon:'fa-lock',url:(v)=>`sms:${v}`,color:'#6366F1',hbg:'rgba(99,102,241,.2)',hcol:'#6366F1'},
-  {id:'meet',label:'Google Meet',icon:'fa-brands fa-google',url:(v)=>v,color:'#34A853',hbg:'rgba(52,168,83,.2)',hcol:'#34A853'},
-  {id:'zoom',label:'Zoom',icon:'fa-video',url:(v)=>v,color:'#2D8CFF',hbg:'rgba(45,140,255,.2)',hcol:'#2D8CFF'},
-  {id:'sms',label:'SMS',icon:'fa-mobile-screen',url:(v)=>`sms:${v}`,color:'#F59E0B',hbg:'rgba(245,158,11,.2)',hcol:'#F59E0B'},
+  {id:'phone',label:'Phone/Call',icon:'fa-phone',url:(v)=>`tel:${v}`,nativeUri:(v)=>`tel:${v}`,color:'#10B981',hbg:'rgba(16,185,129,.2)',hcol:'#10B981'},
+  {id:'whatsapp',label:'WhatsApp',icon:'fa-brands fa-whatsapp',url:(v)=>`https://wa.me/${v.replace(/\D/g,'')}`,nativeUri:(v)=>`whatsapp://send?phone=${v.replace(/\D/g,'')}`,color:'#25D366',hbg:'rgba(37,211,102,.2)',hcol:'#25D366'},
+  {id:'messenger',label:'Messenger',icon:'fa-brands fa-facebook-messenger',url:(v)=>`https://m.me/${v}`,nativeUri:(v)=>`fb-messenger://user-thread/${v}`,color:'#0084FF',hbg:'rgba(0,132,255,.2)',hcol:'#0084FF'},
+  {id:'email',label:'Email',icon:'fa-envelope',url:(v)=>`mailto:${v}`,nativeUri:(v)=>`mailto:${v}`,color:'#3B82F6',hbg:'rgba(59,130,246,.2)',hcol:'#3B82F6'},
+  {id:'instagram',label:'Instagram DM',icon:'fa-brands fa-instagram',url:(v)=>`https://ig.me/m/${v}`,nativeUri:(v)=>`instagram://user?username=${v}`,color:'#E91E63',hbg:'rgba(233,30,99,.2)',hcol:'#E91E63'},
+  {id:'telegram',label:'Telegram',icon:'fa-brands fa-telegram',url:(v)=>`https://t.me/${v}`,nativeUri:(v)=>`tg://resolve?domain=${v.replace(/^@/,'')}`,color:'#2979FF',hbg:'rgba(41,121,255,.2)',hcol:'#2979FF'},
+  {id:'linkedin',label:'LinkedIn',icon:'fa-brands fa-linkedin',url:(v)=>`https://linkedin.com/in/${v}`,nativeUri:(v)=>`linkedin://profile/${v}`,color:'#0A66C2',hbg:'rgba(10,102,194,.2)',hcol:'#0A66C2'},
+  {id:'signal',label:'Signal',icon:'fa-lock',url:(v)=>`https://signal.me/#p/${v.replace(/\D/g,'')}`,nativeUri:(v)=>`sgnl://signal.me/#p/${v.replace(/\D/g,'')}`,color:'#6366F1',hbg:'rgba(99,102,241,.2)',hcol:'#6366F1'},
+  {id:'meet',label:'Google Meet',icon:'fa-brands fa-google',url:(v)=>v,nativeUri:null,color:'#34A853',hbg:'rgba(52,168,83,.2)',hcol:'#34A853'},
+  {id:'zoom',label:'Zoom',icon:'fa-video',url:(v)=>v,nativeUri:null,color:'#2D8CFF',hbg:'rgba(45,140,255,.2)',hcol:'#2D8CFF'},
+  {id:'sms',label:'SMS',icon:'fa-mobile-screen',url:(v)=>`sms:${v}`,nativeUri:(v)=>`sms:${v}`,color:'#F59E0B',hbg:'rgba(245,158,11,.2)',hcol:'#F59E0B'},
 ];
 let editContactMethods=[];
 function renderContactMethodsFields(){
@@ -2264,9 +2285,17 @@ function buildContactButtons(clock){
   if(clock.contacts && clock.contacts.length){
     clock.contacts.forEach(m=>{
       const ct=CONTACT_TYPES.find(t=>t.id===m.type)||CONTACT_TYPES[0];
-      const href=ct.url(m.value);
-      const isExternal=href.startsWith('http')||href.startsWith('mailto')||href.startsWith('tel')||href.startsWith('sms');
-      btns.push(`<a href="${escapeHtml(href)}" ${isExternal?'target="_blank" rel="noopener"':''} class="pa-contact-btn" style="--ch-bg:${ct.hbg};--ch-col:${ct.hcol};" title="${escapeHtml(ct.label)}: ${escapeHtml(m.value)}"><i class="fa-solid ${ct.icon}" style="color:${ct.color};font-size:.7rem;"></i>${escapeHtml(ct.label)}</a>`);
+      const webUrl=ct.url(m.value);
+      const appUri=ct.nativeUri ? ct.nativeUri(m.value) : null;
+      // Use deep link button for all social platforms; plain anchor for mailto/tel/sms
+      if(appUri && !appUri.startsWith('mailto') && !appUri.startsWith('tel') && !appUri.startsWith('sms')){
+        const escapedApp=appUri.replace(/'/g,"\\'");
+        const escapedWeb=webUrl.replace(/'/g,"\\'");
+        btns.push(`<button class="pa-contact-btn" style="--ch-bg:${ct.hbg};--ch-col:${ct.hcol};" onclick="openNativeDeepLink('${escapedApp}','${escapedWeb}')" title="${escapeHtml(ct.label)}: ${escapeHtml(m.value)}"><i class="fa-solid ${ct.icon}" style="color:${ct.color};font-size:.7rem;"></i>${escapeHtml(ct.label)}</button>`);
+      } else {
+        const isExternal=webUrl.startsWith('http')||webUrl.startsWith('mailto')||webUrl.startsWith('tel')||webUrl.startsWith('sms');
+        btns.push(`<a href="${escapeHtml(webUrl)}" ${isExternal?'target="_blank" rel="noopener"':''} class="pa-contact-btn" style="--ch-bg:${ct.hbg};--ch-col:${ct.hcol};" title="${escapeHtml(ct.label)}: ${escapeHtml(m.value)}"><i class="fa-solid ${ct.icon}" style="color:${ct.color};font-size:.7rem;"></i>${escapeHtml(ct.label)}</a>`);
+      }
     });
   }
   return btns.join('');
@@ -2609,7 +2638,7 @@ document.getElementById('btnNext').addEventListener('click',()=>{state.view.anch
 document.getElementById('btnToday').addEventListener('click',()=>{state.view.anchor=todayStr();save();renderGrid();});
 
 /* ---- MESSAGING ---- */
-function renderPlatformGrid(){const grid=document.getElementById('platformGrid');grid.innerHTML=PLATFORMS.map(p=>`<a href="${p.url}" target="_blank" rel="noopener" class="platform-card" style="--pc:${p.color}"><span class="i3d i3d-md" style="${p.icc}color:#fff;"><i class="${p.icon}"></i></span><span class="pname">${p.name}</span><span class="ptype">${p.type}</span></a>`).join('');}
+function renderPlatformGrid(){const grid=document.getElementById('platformGrid');grid.innerHTML=PLATFORMS.map(p=>`<button class="platform-card" style="--pc:${p.color};border:none;background:none;cursor:pointer;" onclick="openNativeDeepLink('${(p.nativeUri||'').replace(/'/g,'&#39;')}','${p.url.replace(/'/g,'&#39;')}')"><span class="i3d i3d-md" style="${p.icc}color:#fff;"><i class="${p.icon}"></i></span><span class="pname">${p.name}</span><span class="ptype">${p.type}</span></button>`).join('');}
 document.getElementById('btnGenerateReply').addEventListener('click',async()=>{
   const text=document.getElementById('srInput').value.trim();if(!text){toast('Empty message','Paste a received message first.','warn');return;}
   const context=document.getElementById('srContext').value;const style=document.getElementById('srStyle').value;
@@ -3245,7 +3274,9 @@ window.dispatchClientReminder = function(eventId, channel){
     const phone = (client?.contacts || []).find(m => m.type === 'phone' || m.type === 'whatsapp')?.value || '';
     const cleanPhone = phone.replace(/[^0-9]/g, '');
     const msg = encodeURIComponent(`Hi ${client ? client.name : 'there'}, friendly reminder for our session "${title}" scheduled for ${timeStr}. Looking forward to connecting!`);
-    window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
+    const webUrl = `https://wa.me/${cleanPhone}?text=${msg}`;
+    const appUri = `whatsapp://send?phone=${cleanPhone}&text=${msg}`;
+    openNativeDeepLink(appUri, webUrl);
   } else if(channel === 'email'){
     const email = (client?.contacts || []).find(m => m.type === 'email')?.value || '';
     const subject = encodeURIComponent(`[Reminder] Meeting: ${title}`);
@@ -3253,7 +3284,7 @@ window.dispatchClientReminder = function(eventId, channel){
     window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
   } else if(channel === 'messenger'){
     const messenger = (client?.contacts || []).find(m => m.type === 'messenger')?.value || '';
-    window.open(`https://m.me/${messenger}`, '_blank');
+    openNativeDeepLink(`fb-messenger://user-thread/${messenger}`, `https://m.me/${messenger}`);
   } else {
     toast('Reminder Scheduled', `In-app alert queued for ${title}.`, 'info');
   }
