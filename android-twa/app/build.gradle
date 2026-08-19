@@ -21,7 +21,7 @@ plugins {
 }
 
 def twaManifest = [
-    applicationId: 'imi.imtimecommand.app',
+    applicationId: 'com.imi.timecommand',
     hostName: 'im-time-command.vercel.app', // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
     name: 'iM Time Command', // The application name.
@@ -52,9 +52,9 @@ def twaManifest = [
 
 android {
     compileSdkVersion 36
-    namespace "imi.imtimecommand.app"
+    namespace "com.imi.timecommand"
     defaultConfig {
-        applicationId "imi.imtimecommand.app"
+        applicationId "com.imi.timecommand"
         minSdkVersion 21
         targetSdkVersion 35
         versionCode 11
