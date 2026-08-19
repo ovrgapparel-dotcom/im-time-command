@@ -1,4 +1,4 @@
-const CACHE = 'imt-v7';
+const CACHE = 'imt-v8';
 const PRECACHE = [
   '/',
   '/index.html',
