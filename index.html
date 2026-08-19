@@ -1169,9 +1169,10 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">
+        <button class="btn btn-accent btn-sm" id="btnImportPhoneContactsDir" onclick="importNativeDeviceContacts()"><i class="fa-solid fa-mobile-screen-button"></i> Import Phone Contacts</button>
         <label class="btn btn-success btn-sm" style="margin:0;cursor:pointer;">
           <i class="fa-solid fa-file-import"></i> Import CSV / VCF
-          <input type="file" id="contactsImportInput" accept=".csv,.vcf,.vcard" style="display:none;">
+          <input type="file" id="contactsImportInput" accept=".csv,.vcf,.vcard,.xlsx,.txt" style="display:none;">
         </label>
         <button class="btn btn-ghost btn-sm" id="btnExportContactsCsv"><i class="fa-solid fa-file-export"></i> Export CSV</button>
         <button class="btn btn-primary btn-sm" id="btnAddPartnerFromDir"><i class="fa-solid fa-user-plus"></i> Add Contact</button>
@@ -1197,9 +1198,14 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
 <div class="overlay" id="clockOverlay">
   <div class="panel modal">
     <button class="close" data-close="clockOverlay">✕</button>
-    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.2rem;">
-      <span class="i3d i3d-sm i3d-blue"><i class="fa-solid fa-clock"></i></span>
-      <h3 id="clockModalTitle">Add Collaborator Clock</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.2rem;">
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <span class="i3d i3d-sm i3d-blue"><i class="fa-solid fa-clock"></i></span>
+        <h3 id="clockModalTitle">Add Collaborator Clock</h3>
+      </div>
+      <button type="button" class="btn btn-accent btn-sm" id="btnAutofillDeviceContact" onclick="autofillDeviceContactSingle()" title="Select contact from phone to auto-fill details">
+        <i class="fa-solid fa-mobile-screen-button"></i> From Phone
+      </button>
     </div>
     <p class="sub">Partner time zone, working hours &amp; availability</p>
     <input type="hidden" id="clockId">
@@ -1914,6 +1920,8 @@ function renderClockStrip(){
   });
   // Add contact button
   const addBtn=document.createElement('button');addBtn.className='add-collab-chip';addBtn.innerHTML=`<i class="fa-solid fa-user-plus"></i> Add Contact`;addBtn.addEventListener('click',()=>openClockModal(null));strip.appendChild(addBtn);
+  // Phone contacts import button
+  const devBtn=document.createElement('button');devBtn.className='add-collab-chip';devBtn.style.borderColor='var(--gold)';devBtn.style.color='var(--gold)';devBtn.innerHTML='<i class="fa-solid fa-mobile-screen-button"></i> Import Phone Contacts';devBtn.addEventListener('click',importNativeDeviceContacts);strip.appendChild(devBtn);
   // Directory & Import button
   const dirBtn=document.createElement('button');dirBtn.className='add-collab-chip';dirBtn.style.borderColor='var(--blue)';dirBtn.style.color='var(--blue)';dirBtn.innerHTML=`<i class="fa-solid fa-address-book"></i> Directory (${state.clocks.length})`;dirBtn.addEventListener('click',openDirectoryModal);strip.appendChild(dirBtn);
 }
@@ -2010,6 +2018,126 @@ document.getElementById('btnSaveClock').addEventListener('click',()=>{
 document.getElementById('btnDeleteClock').addEventListener('click',()=>{const id=document.getElementById('clockId').value;if(!confirm('Remove this collaborator?'))return;state.clocks=state.clocks.filter(c=>c.id!==id);save();document.getElementById('clockOverlay').classList.remove('show');renderAll();});
 
 /* ---- CONTACT DIRECTORY & CSV/VCF IMPORT/EXPORT ---- */
+function detectTzFromPhoneOrAddr(phone, addr){
+  const p = (phone || '').replace(/[\s\(\)\-]/g, '');
+  if(p.startsWith('+1') || p.startsWith('1')) return 'America/New_York';
+  if(p.startsWith('+44')) return 'Europe/London';
+  if(p.startsWith('+33')) return 'Europe/Paris';
+  if(p.startsWith('+49')) return 'Europe/Berlin';
+  if(p.startsWith('+234')) return 'Africa/Lagos';
+  if(p.startsWith('+27')) return 'Africa/Johannesburg';
+  if(p.startsWith('+81')) return 'Asia/Tokyo';
+  if(p.startsWith('+86')) return 'Asia/Shanghai';
+  if(p.startsWith('+91')) return 'Asia/Kolkata';
+  if(p.startsWith('+971')) return 'Asia/Dubai';
+  if(p.startsWith('+61')) return 'Australia/Sydney';
+  if(p.startsWith('+55')) return 'America/Sao_Paulo';
+  if(p.startsWith('+52')) return 'America/Mexico_City';
+  if(p.startsWith('+34')) return 'Europe/Madrid';
+  if(p.startsWith('+39')) return 'Europe/Rome';
+  if(p.startsWith('+351')) return 'Europe/Lisbon';
+  if(p.startsWith('+31')) return 'Europe/Amsterdam';
+  if(p.startsWith('+41')) return 'Europe/Zurich';
+  if(p.startsWith('+65')) return 'Asia/Singapore';
+  if(p.startsWith('+852')) return 'Asia/Hong_Kong';
+  if(p.startsWith('+82')) return 'Asia/Seoul';
+  if(addr){
+    const resolved = resolveTz(addr, '');
+    if(resolved) return resolved;
+  }
+  return '';
+}
+
+window.importNativeDeviceContacts = async function(){
+  const isSupported = ('contacts' in navigator && 'ContactsManager' in window);
+  if(!isSupported){
+    toast('Mobile Feature', 'Device Contact Selector works directly on mobile phones & tablets (Android / iOS). Use "Import CSV / VCF" to upload contact exports on PC.', 'info');
+    document.getElementById('contactsImportInput')?.click();
+    return;
+  }
+
+  try {
+    const props = ['name', 'email', 'tel', 'address'];
+    const opts = { multiple: true };
+    const rawContacts = await navigator.contacts.select(props, opts);
+    if(!rawContacts || !rawContacts.length){
+      toast('No Contacts Selected', 'No contacts were selected from your device.', 'info');
+      return;
+    }
+
+    const imported = [];
+    rawContacts.forEach(c => {
+      const name = (c.name && c.name[0]) ? c.name[0] : '';
+      if(!name) return;
+      const phone = (c.tel && c.tel[0]) ? c.tel[0] : '';
+      const email = (c.email && c.email[0]) ? c.email[0] : '';
+      const addr = (c.address && c.address[0]) ? JSON.stringify(c.address[0]) : '';
+      
+      const contacts = [];
+      if(phone) contacts.push({type:'phone', value:phone});
+      if(email) contacts.push({type:'email', value:email});
+
+      const tz = detectTzFromPhoneOrAddr(phone, addr) || state.profile.primaryTz;
+
+      imported.push({
+        id: uid(),
+        name,
+        role: 'Phone Contact',
+        tz,
+        workStart: '09:00',
+        workEnd: '17:00',
+        workDays: [1,2,3,4,5],
+        color: CLOCK_COLORS[imported.length % CLOCK_COLORS.length],
+        contacts: contacts.slice(0, 3)
+      });
+    });
+
+    if(imported.length){
+      state.clocks = [...state.clocks, ...imported];
+      save();
+      renderAll();
+      renderDirectoryList('');
+      toast('Contacts Imported!', `Successfully added ${imported.length} contact(s) from your phone.`, 'success');
+    }
+  } catch(err) {
+    if(err.name !== 'SecurityError' && !err.message?.includes('canceled') && !err.message?.includes('cancelled')){
+      toast('Import Canceled', 'Contact selection was closed.', 'info');
+    }
+  }
+};
+
+window.autofillDeviceContactSingle = async function(){
+  const isSupported = ('contacts' in navigator && 'ContactsManager' in window);
+  if(!isSupported){
+    toast('Mobile Feature', 'Device Contact Selector works directly on mobile devices (Android / iOS). Fill in the fields manually or upload a CSV/VCF.', 'info');
+    return;
+  }
+  try {
+    const rawContacts = await navigator.contacts.select(['name', 'email', 'tel', 'address'], { multiple: false });
+    if(!rawContacts || !rawContacts.length) return;
+    const c = rawContacts[0];
+    const name = (c.name && c.name[0]) ? c.name[0] : '';
+    const phone = (c.tel && c.tel[0]) ? c.tel[0] : '';
+    const email = (c.email && c.email[0]) ? c.email[0] : '';
+    const addr = (c.address && c.address[0]) ? JSON.stringify(c.address[0]) : '';
+
+    if(name) document.getElementById('clockName').value = name;
+    
+    // Auto-fill contact methods
+    editContactMethods = [];
+    if(phone) editContactMethods.push({type:'phone', value:phone});
+    if(email) editContactMethods.push({type:'email', value:email});
+    renderContactMethodsFields();
+
+    const tz = detectTzFromPhoneOrAddr(phone, addr);
+    if(tz){
+      const tzInp = document.getElementById('clockTz');
+      tzInp.value = friendlyTz(tz);
+      tzInp.dataset.tz = tz;
+    }
+    toast('Contact Selected', `Loaded details for ${name || 'contact'}.`, 'success');
+  } catch(err){}
+};
 function parseCsvContacts(text){
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if(!lines.length) return [];
