@@ -3,7 +3,9 @@ node_modules/
 .vercel
 *.log
 .gradle/
-android-twa/.gradle/
+**/build/
+**/.gradle/
+*.lock
 android-twa/app/build/
 android-twa/build/
-*.lock
+
