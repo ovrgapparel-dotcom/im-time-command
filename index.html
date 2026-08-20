@@ -184,7 +184,9 @@ button{cursor:pointer;}
 .day-col-header small{font-size:.6rem;color:var(--text-mute);}
 .day-col-header.today{background:rgba(59,130,246,.15);border-bottom-color:var(--blue);}
 .day-body{position:relative;border-left:1px solid var(--border);background-image:repeating-linear-gradient(to bottom,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent calc(60px * var(--px-min)));}
-.day-body.dragover{background-color:rgba(59,130,246,.18) !important;outline:2px dashed #3B82F6 !important;outline-offset:-2px;}
+.day-body.dragover{background-color:rgba(59,130,246,.08) !important;}
+.slot-target-highlight{position:absolute;left:2px;right:2px;border:2px dashed #3B82F6;background:rgba(59,130,246,.28);border-radius:7px;pointer-events:none;z-index:12;box-shadow:0 0 16px rgba(59,130,246,.45),inset 0 0 10px rgba(59,130,246,.2);display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;color:#fff;backdrop-filter:blur(4px);transition:top 0.05s ease,height 0.05s ease;}
+.slot-target-time-badge{background:rgba(13,17,23,.92);border:1px solid rgba(59,130,246,.6);color:#60A5FA;padding:2px 8px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.5);font-family:'Space Grotesk',sans-serif;letter-spacing:.02em;}
 .collab-chip{cursor:grab;user-select:none;transition:transform .15s,box-shadow .15s,opacity .15s;}
 .collab-chip:active{cursor:grabbing;}
 .collab-chip.dragging{opacity:.35;transform:scale(0.94);border-style:dashed !important;}
@@ -193,13 +195,15 @@ button{cursor:pointer;}
 .drag-handle-icon:hover{color:var(--blue) !important;}
 .now-line{position:absolute;left:0;right:0;height:2px;background:var(--coral);z-index:2;box-shadow:0 0 8px var(--coral);}
 .now-line::before{content:'';position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--coral);}
-.event-block{position:absolute;left:3px;right:3px;border-radius:7px;padding:3px 6px;overflow:hidden;border-left:3px solid rgba(255,255,255,.7);cursor:grab;user-select:none;box-shadow:0 4px 12px rgba(0,0,0,.4);transition:box-shadow .12s;z-index:1;}
+.event-block{position:absolute;left:3px;right:3px;border-radius:7px;padding:3px 6px;overflow:hidden;border-left:3px solid rgba(255,255,255,.7);cursor:grab;user-select:none;box-shadow:0 4px 12px rgba(0,0,0,.4);transition:box-shadow .12s,transform .12s;z-index:1;touch-action:none;}
 .event-block:hover{box-shadow:0 6px 20px rgba(0,0,0,.6);z-index:4;}
+.event-block.selected{box-shadow:0 0 0 2.5px #F59E0B,0 8px 24px rgba(0,0,0,.85) !important;z-index:10 !important;transform:scale(1.015);}
+.event-block.lifted{box-shadow:0 14px 36px rgba(59,130,246,.6) !important;z-index:20 !important;transform:scale(1.04);border-style:dashed !important;}
 .event-block:active{cursor:grabbing;}
 .event-block .t{font-size:.63rem;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .event-block .tm{font-size:.56rem;opacity:.85;}
-.event-block .resize-handle{position:absolute;left:0;right:0;bottom:0;height:6px;cursor:ns-resize;}
-.event-block.dragging{opacity:.4;}
+.event-block .resize-handle{position:absolute;left:0;right:0;bottom:0;height:8px;cursor:ns-resize;}
+.event-block.dragging{opacity:.5;}
 .drag-ghost{position:absolute;left:3px;right:3px;border-radius:7px;border:2px dashed rgba(255,255,255,.4);background:rgba(255,255,255,.04);pointer-events:none;z-index:5;}
 .help-note{font-size:.7rem;color:var(--text-mute);line-height:1.5;padding:.55rem 1.1rem .75rem;border-top:1px solid var(--border);}
 
@@ -560,6 +564,7 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
             </div>
             <div class="view-toggle">
               <button id="viewDayBtn" data-i18n="view_day">Day</button>
+              <button id="view3DayBtn">3-Day</button>
               <button id="viewWeekBtn" class="active" data-i18n="view_week">Week</button>
             </div>
             <div style="display:flex;gap:.3rem;flex-wrap:wrap;">
@@ -569,7 +574,7 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
             </div>
           </div>
           <div class="grid-scroll"><div class="grid-wrap"><div class="time-gutter" id="timeGutter"></div><div class="days-cols" id="daysCols"></div></div></div>
-          <div class="help-note"><i class="fa-solid fa-circle-info" style="color:var(--blue);margin-right:.35rem;"></i>Drag block to move &nbsp;·&nbsp; <b>Ctrl/⌘ + drag</b> to duplicate &nbsp;·&nbsp; drag bottom edge to resize &nbsp;·&nbsp; click empty slot to create</div>
+          <div class="help-note"><i class="fa-solid fa-circle-info" style="color:var(--blue);margin-right:.35rem;"></i><b>Tap once</b> to select &nbsp;·&nbsp; <b>Double-tap</b> to open &nbsp;·&nbsp; <b>Hold &amp; drag</b> cell-by-cell &nbsp;·&nbsp; <b>Ctrl/⌘ + drag</b> to duplicate &nbsp;·&nbsp; drag bottom edge to resize</div>
         </div>
 
         <!-- PLANNER METRICS & PERFORMANCE PANEL -->
@@ -2502,15 +2507,57 @@ function updateQuickLinks(){
 /* ---- AGENDA GRID ---- */
 const GRID_SH=6,GRID_EH=23,PX_MIN=1.2;
 function weekDates(a){const wd=weekdayOf(a);const mon=addDays(a,wd===0?-6:1-wd);return Array.from({length:7},(_,i)=>addDays(mon,i));}
-function visibleDates(){return state.view.mode==='day'?[state.view.anchor]:weekDates(state.view.anchor);}
-function setViewLabel(){const dates=visibleDates();const el=document.getElementById('dateRange');if(state.view.mode==='day'){el.textContent=fmtDateLabel(zonedTimeToUtc(dates[0],'12:00',state.profile.primaryTz),state.profile.primaryTz);}else{const f=new Date(dates[0]+'T12:00:00'),l=new Date(dates[dates.length-1]+'T12:00:00');el.textContent=`${f.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${l.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;}}
+function visibleDates(){
+  if(state.view.mode==='day') return [state.view.anchor];
+  if(state.view.mode==='3day') return [state.view.anchor, addDays(state.view.anchor,1), addDays(state.view.anchor,2)];
+  return weekDates(state.view.anchor);
+}
+function setViewLabel(){
+  const dates=visibleDates();const el=document.getElementById('dateRange');
+  if(state.view.mode==='day'){
+    el.textContent=fmtDateLabel(zonedTimeToUtc(dates[0],'12:00',state.profile.primaryTz),state.profile.primaryTz);
+  }else{
+    const f=new Date(dates[0]+'T12:00:00'),l=new Date(dates[dates.length-1]+'T12:00:00');
+    el.textContent=`${f.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${l.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  }
+}
 function eventOccursOn(ev,ds){if(!ev.repeat||ev.repeat.type==='none')return ev.date===ds;if(ds<ev.date)return false;if(ev.repeat.until&&ds>ev.repeat.until)return false;const wd=weekdayOf(ds);if(ev.repeat.type==='daily')return true;if(ev.repeat.type==='weekdays')return wd>=1&&wd<=5;if(ev.repeat.type==='weekly')return wd===weekdayOf(ev.date);if(ev.repeat.type==='custom')return(ev.repeat.days||[]).includes(wd);return false;}
+
+/* ---- CELL-BY-CELL SLOT TARGET HIGHLIGHT HELPER ---- */
+function updateSlotTargetHighlight(body, offsetY, durationMinutes=30){
+  clearSlotTargetHighlights();
+  if(!body) return;
+  const snap = 15 * PX_MIN;
+  const snappedTop = Math.max(0, Math.round(offsetY / snap) * snap);
+  const durHeight = Math.max(snap, Math.round((durationMinutes * PX_MIN) / snap) * snap);
+  const sMin = GRID_SH * 60 + snappedTop / PX_MIN;
+  const eMin = sMin + (durHeight / PX_MIN);
+
+  const startTimeStr = minutesToTime(sMin);
+  const endTimeStr = minutesToTime(eMin);
+
+  const highlight = document.createElement('div');
+  highlight.className = 'slot-target-highlight';
+  highlight.style.top = snappedTop + 'px';
+  highlight.style.height = durHeight + 'px';
+  highlight.innerHTML = `<span class="slot-target-time-badge"><i class="fa-solid fa-crosshairs" style="margin-right:4px;"></i>${startTimeStr} – ${endTimeStr}</span>`;
+
+  body.appendChild(highlight);
+}
+
+function clearSlotTargetHighlights(){
+  document.querySelectorAll('.slot-target-highlight').forEach(el => el.remove());
+}
+
 function renderGrid(){
   setViewLabel();const dates=visibleDates();const gutter=document.getElementById('timeGutter');const cols=document.getElementById('daysCols');const totalMin=(GRID_EH-GRID_SH)*60;const gridH=totalMin*PX_MIN;
   let gHtml=`<div class="day-col-header">&nbsp;</div>`;
   for(let h=GRID_SH;h<GRID_EH;h++)gHtml+=`<div class="slot-label" style="height:${60*PX_MIN}px;">${h%12===0?12:h%12}${h<12?'am':'pm'}</div>`;
   gutter.innerHTML=gHtml;
-  cols.style.gridTemplateColumns=`repeat(${dates.length},minmax(120px,1fr))`;
+  
+  const isMobile = window.innerWidth <= 768;
+  const minColWidth = isMobile ? (state.view.mode==='week'?'110px':'130px') : '120px';
+  cols.style.gridTemplateColumns=`repeat(${dates.length},minmax(${minColWidth},1fr))`;
   cols.style.gridTemplateRows=`auto ${gridH}px`;
   cols.innerHTML='';
   const today=todayStr();
@@ -2527,19 +2574,17 @@ function renderGrid(){
       if(!eventOccursOn(ev,dateStr))return;
       const evTz = ev.tz || state.profile.primaryTz;
       
-      // Convert event time to Viewer's Primary TimeZone for grid layout
       const startUtc = zonedTimeToUtc(ev.date, ev.start, evTz);
       const endUtc = zonedTimeToUtc(ev.date, ev.end, evTz);
       const startZ = utcToZoned(startUtc, state.profile.primaryTz);
       const endZ = utcToZoned(endUtc, state.profile.primaryTz);
       
-      // Verify if converted event date matches current grid column date
       if(startZ.date !== dateStr) return;
       
       const sMin=minutesOf(startZ.time)-GRID_SH*60, eMin=minutesOf(endZ.time)-GRID_SH*60;
       if(eMin<=0||sMin>=totalMin)return;
       
-      const top=Math.max(0,sMin)*PX_MIN, height=Math.max(16,(Math.min(totalMin,eMin)-Math.max(0,sMin))*PX_MIN);
+      const top=Math.max(0,sMin)*PX_MIN, height=Math.max(18,(Math.min(totalMin,eMin)-Math.max(0,sMin))*PX_MIN);
       const cat=CATEGORIES.find(c=>c.id===ev.category)||CATEGORIES[0];
       const collab=state.clocks.find(c=>c.id===ev.collaboratorId);
       
@@ -2565,19 +2610,21 @@ function renderGrid(){
 function wireDayBodyDrag(body){
   let dragging=false,startY=0,ghost=null;
   
-  // HTML5 Dragover and Drop for Collaborator Clock Cards
+  // HTML5 Dragover and Drop with cell-by-cell slot highlight
   body.addEventListener('dragover', e => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
-    body.classList.add('dragover');
+    const rect = body.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    updateSlotTargetHighlight(body, offsetY, 30);
   });
 
   body.addEventListener('dragleave', () => {
-    body.classList.remove('dragover');
+    clearSlotTargetHighlights();
   });
 
   body.addEventListener('drop', e => {
-    body.classList.remove('dragover');
+    clearSlotTargetHighlights();
     e.preventDefault();
     const raw = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text');
     if(!raw) return;
@@ -2596,17 +2643,12 @@ function wireDayBodyDrag(body){
         const endTime = minutesToTime(eMin);
         const collab = state.clocks.find(c => c.id === data.id);
 
-        // Close directory overlay if open
         document.getElementById('directoryOverlay')?.classList.remove('show');
-
-        // Switch to Agenda tab
         const agendaTabBtn = suiteNav.querySelector('[data-tab="agenda"]');
         if(agendaTabBtn) agendaTabBtn.click();
 
-        // Open modal pre-filled with exact dropped date + time + collaborator
         openEventModal(null, dateStr, startTime, endTime, data.id);
 
-        // Set a descriptive default title
         const titleInp = document.getElementById('evTitle');
         if(!titleInp.value && collab) titleInp.value = `Strategy Session \u2014 ${collab.name}`;
         updateCollabPreview();
@@ -2616,8 +2658,188 @@ function wireDayBodyDrag(body){
     } catch(err){ console.warn('Drop handler error:', err); }
   });
 
-  body.addEventListener('pointerdown',e=>{if(e.target.closest('.event-block'))return;dragging=true;startY=e.offsetY;ghost=document.createElement('div');ghost.className='drag-ghost';body.appendChild(ghost);body.setPointerCapture(e.pointerId);});body.addEventListener('pointermove',e=>{if(!dragging)return;const y1=Math.min(startY,e.offsetY),y2=Math.max(startY,e.offsetY);const snap=15*PX_MIN;const top=Math.round(y1/snap)*snap;ghost.style.top=top+'px';ghost.style.height=Math.max(snap,Math.round(y2/snap)*snap-top)+'px';});function finish(e){if(!dragging)return;dragging=false;const y1=Math.min(startY,e.offsetY??startY),y2=Math.max(startY,e.offsetY??startY);const snap=15*PX_MIN;const top=Math.round(y1/snap)*snap;const bottom=Math.max(top+snap,Math.round(y2/snap)*snap);if(ghost)ghost.remove();const sMin=GRID_SH*60+top/PX_MIN,eMin=GRID_SH*60+bottom/PX_MIN;if(bottom-top<snap+2&&Math.abs(y2-y1)<4)openEventModal(null,body.dataset.date,minutesToTime(sMin),minutesToTime(sMin+30));else openEventModal(null,body.dataset.date,minutesToTime(sMin),minutesToTime(eMin));}body.addEventListener('pointerup',finish);}
-function wireEventBlock(block,ev){let mode=null,startY=0,origTop=0,origH=0,startBody=null;const handle=block.querySelector('.resize-handle');block.addEventListener('pointerdown',e=>{if(e.target===handle)return;mode='move';startY=e.clientY;origTop=parseFloat(block.style.top);origH=parseFloat(block.style.height);startBody=block.parentElement;block.classList.add('dragging');block.setPointerCapture(e.pointerId);e.stopPropagation();});handle.addEventListener('pointerdown',e=>{mode='resize';startY=e.clientY;origH=parseFloat(block.style.height);origTop=parseFloat(block.style.top);block.setPointerCapture(e.pointerId);e.stopPropagation();});block.addEventListener('pointermove',e=>{if(!mode)return;const dy=e.clientY-startY;const snap=15*PX_MIN;if(mode==='resize')block.style.height=Math.max(snap,Math.round((origH+dy)/snap)*snap)+'px';else{block.style.top=Math.max(0,Math.round((origTop+dy)/snap)*snap)+'px';const el=document.elementFromPoint(e.clientX,e.clientY);const ob=el?el.closest('.day-body'):null;document.querySelectorAll('.day-body.dragover').forEach(d=>d.classList.remove('dragover'));if(ob)ob.classList.add('dragover');}});block.addEventListener('pointerup',e=>{if(!mode)return;document.querySelectorAll('.day-body.dragover').forEach(d=>d.classList.remove('dragover'));block.classList.remove('dragging');if(mode==='resize'){const hMin=parseFloat(block.style.height)/PX_MIN;const sMin=GRID_SH*60+origTop/PX_MIN;const ev2=state.events.find(e=>e.id===block.dataset.evId);if(ev2){ev2.end=minutesToTime(sMin+hMin);save();}}else if(mode==='move'){const el=document.elementFromPoint(e.clientX,e.clientY);const ob=el?el.closest('.day-body'):startBody;const nd=ob?ob.dataset.date:ev.date;const tMin=parseFloat(block.style.top)/PX_MIN;const dur=origH/PX_MIN;const ns=minutesToTime(GRID_SH*60+tMin),ne=minutesToTime(GRID_SH*60+tMin+dur);if(e.ctrlKey||e.metaKey)duplicateEvent(ev,nd,ns,ne);else{const t=state.events.find(x=>x.id===ev.id);if(t){t.date=nd;t.start=ns;t.end=ne;save();}}}mode=null;renderAll();});block.addEventListener('click',e=>{if(block.classList.contains('dragging'))return;openEventModal(ev);});}
+  body.addEventListener('pointerdown',e=>{
+    if(e.target.closest('.event-block'))return;
+    dragging=true;startY=e.offsetY;
+    ghost=document.createElement('div');
+    ghost.className='drag-ghost';
+    body.appendChild(ghost);
+    try{ body.setPointerCapture(e.pointerId); }catch(err){}
+  });
+
+  body.addEventListener('pointermove',e=>{
+    if(!dragging)return;
+    const y1=Math.min(startY,e.offsetY),y2=Math.max(startY,e.offsetY);
+    const snap=15*PX_MIN;
+    const top=Math.round(y1/snap)*snap;
+    const height=Math.max(snap,Math.round(y2/snap)*snap-top);
+    ghost.style.top=top+'px';
+    ghost.style.height=height+'px';
+    updateSlotTargetHighlight(body, top, height / PX_MIN);
+  });
+
+  function finish(e){
+    if(!dragging)return;
+    dragging=false;
+    clearSlotTargetHighlights();
+    const y1=Math.min(startY,e.offsetY??startY),y2=Math.max(startY,e.offsetY??startY);
+    const snap=15*PX_MIN;
+    const top=Math.round(y1/snap)*snap;
+    const bottom=Math.max(top+snap,Math.round(y2/snap)*snap);
+    if(ghost)ghost.remove();
+    const sMin=GRID_SH*60+top/PX_MIN,eMin=GRID_SH*60+bottom/PX_MIN;
+    if(bottom-top<snap+2&&Math.abs(y2-y1)<4) openEventModal(null,body.dataset.date,minutesToTime(sMin),minutesToTime(sMin+30));
+    else openEventModal(null,body.dataset.date,minutesToTime(sMin),minutesToTime(eMin));
+  }
+  body.addEventListener('pointerup',finish);
+  body.addEventListener('pointercancel',finish);
+}
+
+function wireEventBlock(block,ev){
+  let mode=null, startY=0, origTop=0, origH=0, startBody=null;
+  let lastTapTime=0, longPressTimer=null, touchStartPos={x:0, y:0}, isLongPressActive=false;
+  const handle=block.querySelector('.resize-handle');
+
+  // Single Tap Selection & Double Tap Open Handler
+  block.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(block.classList.contains('dragging') || isLongPressActive){
+      isLongPressActive = false;
+      return;
+    }
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapTime;
+
+    // Single Tap: Select & Highlight ring
+    document.querySelectorAll('.event-block.selected').forEach(b=>b.classList.remove('selected'));
+    block.classList.add('selected');
+
+    // Double Tap (within 350ms): Open Event Modal!
+    if(timeSinceLastTap > 0 && timeSinceLastTap < 350){
+      openEventModal(ev);
+      lastTapTime = 0;
+    } else {
+      lastTapTime = now;
+    }
+  });
+
+  // Pointerdown handler with 350ms Long Press timer for drag initiation
+  block.addEventListener('pointerdown', e=>{
+    if(e.target===handle){
+      mode='resize';
+      startY=e.clientY;
+      origH=parseFloat(block.style.height);
+      origTop=parseFloat(block.style.top);
+      try{ block.setPointerCapture(e.pointerId); }catch(err){}
+      e.stopPropagation();
+      return;
+    }
+
+    touchStartPos = { x: e.clientX, y: e.clientY };
+    isLongPressActive = false;
+
+    // 350ms Tap and Hold (Long Press) to initiate dragging
+    longPressTimer = setTimeout(()=>{
+      isLongPressActive = true;
+      mode = 'move';
+      startY = e.clientY;
+      origTop = parseFloat(block.style.top);
+      origH = parseFloat(block.style.height);
+      startBody = block.parentElement;
+
+      block.classList.add('dragging', 'lifted');
+      if(navigator.vibrate) navigator.vibrate([40]);
+
+      try{ block.setPointerCapture(e.pointerId); }catch(err){}
+    }, 350);
+
+    e.stopPropagation();
+  });
+
+  block.addEventListener('pointermove', e=>{
+    // Cancel long press if user moves pointer > 8px before 350ms timer (allows smooth page scrolling)
+    if(longPressTimer){
+      const dist = Math.hypot(e.clientX - touchStartPos.x, e.clientY - touchStartPos.y);
+      if(dist > 8 && !isLongPressActive){
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    }
+
+    if(!mode) return;
+    const dy = e.clientY - startY;
+    const snap = 15 * PX_MIN;
+
+    if(mode==='resize'){
+      const newHeight = Math.max(snap, Math.round((origH + dy) / snap) * snap);
+      block.style.height = newHeight + 'px';
+    } else if(mode==='move'){
+      const newTop = Math.max(0, Math.round((origTop + dy) / snap) * snap);
+      block.style.top = newTop + 'px';
+
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const ob = el ? el.closest('.day-body') : null;
+
+      if(ob){
+        const rect = ob.getBoundingClientRect();
+        const relativeY = e.clientY - rect.top;
+        const durMinutes = origH / PX_MIN;
+        updateSlotTargetHighlight(ob, relativeY, durMinutes);
+      } else {
+        clearSlotTargetHighlights();
+      }
+    }
+  });
+
+  const endPointer = (e) => {
+    if(longPressTimer){
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+    clearSlotTargetHighlights();
+
+    if(!mode) return;
+
+    block.classList.remove('dragging', 'lifted');
+
+    if(mode==='resize'){
+      const hMin = parseFloat(block.style.height) / PX_MIN;
+      const sMin = GRID_SH * 60 + origTop / PX_MIN;
+      const ev2 = state.events.find(x => x.id === block.dataset.evId);
+      if(ev2){
+        ev2.end = minutesToTime(sMin + hMin);
+        save();
+        toast('Block Resized', `New duration: ${ev2.start} – ${ev2.end}`, 'success');
+      }
+    } else if(mode==='move'){
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const ob = el ? el.closest('.day-body') : startBody;
+      const nd = ob ? ob.dataset.date : ev.date;
+      const tMin = parseFloat(block.style.top) / PX_MIN;
+      const dur = origH / PX_MIN;
+      const ns = minutesToTime(GRID_SH * 60 + tMin);
+      const ne = minutesToTime(GRID_SH * 60 + tMin + dur);
+
+      if(e.ctrlKey || e.metaKey){
+        duplicateEvent(ev, nd, ns, ne);
+      } else {
+        const t = state.events.find(x => x.id === ev.id);
+        if(t){
+          t.date = nd;
+          t.start = ns;
+          t.end = ne;
+          save();
+          toast('Rescheduled', `Moved "${t.title}" to ${nd} (${ns}–${ne})`, 'success');
+        }
+      }
+    }
+    mode = null;
+    renderAll();
+  };
+
+  block.addEventListener('pointerup', endPointer);
+  block.addEventListener('pointercancel', endPointer);
+}
 function duplicateEvent(ev,date,start,end){const copy=JSON.parse(JSON.stringify(ev));copy.id=uid();copy.date=date;copy.start=start;copy.end=end;copy.repeat={type:'none',days:[],until:null};state.events.push(copy);save();toast('Duplicated',`Copy of "${ev.title}" created.`,'success');}
 
 /* ---- PRIORITY SHIFT HELPER ---- */
@@ -2765,12 +2987,27 @@ document.getElementById('btnSaveEvent').addEventListener('click',()=>{
   save();document.getElementById('eventOverlay').classList.remove('show');renderAll();
 });
 document.getElementById('btnNewBlock').addEventListener('click',()=>openEventModal(null,state.view.anchor,'09:00','09:30'));
-document.getElementById('viewDayBtn').addEventListener('click',()=>{state.view.mode='day';save();syncViewBtns();renderGrid();});
-document.getElementById('viewWeekBtn').addEventListener('click',()=>{state.view.mode='week';save();syncViewBtns();renderGrid();});
-function syncViewBtns(){document.getElementById('viewDayBtn').classList.toggle('active',state.view.mode==='day');document.getElementById('viewWeekBtn').classList.toggle('active',state.view.mode==='week');}
-document.getElementById('btnPrev').addEventListener('click',()=>{state.view.anchor=addDays(state.view.anchor,state.view.mode==='day'?-1:-7);save();renderGrid();});
-document.getElementById('btnNext').addEventListener('click',()=>{state.view.anchor=addDays(state.view.anchor,state.view.mode==='day'?1:7);save();renderGrid();});
-document.getElementById('btnToday').addEventListener('click',()=>{state.view.anchor=todayStr();save();renderGrid();});
+document.getElementById('viewDayBtn')?.addEventListener('click',()=>{state.view.mode='day';save();syncViewBtns();renderGrid();});
+document.getElementById('view3DayBtn')?.addEventListener('click',()=>{state.view.mode='3day';save();syncViewBtns();renderGrid();});
+document.getElementById('viewWeekBtn')?.addEventListener('click',()=>{state.view.mode='week';save();syncViewBtns();renderGrid();});
+function syncViewBtns(){
+  document.getElementById('viewDayBtn')?.classList.toggle('active',state.view.mode==='day');
+  document.getElementById('view3DayBtn')?.classList.toggle('active',state.view.mode==='3day');
+  document.getElementById('viewWeekBtn')?.classList.toggle('active',state.view.mode==='week');
+}
+document.getElementById('btnPrev')?.addEventListener('click',()=>{
+  const step = state.view.mode==='day' ? -1 : (state.view.mode==='3day' ? -3 : -7);
+  state.view.anchor = addDays(state.view.anchor, step);
+  save();
+  renderGrid();
+});
+document.getElementById('btnNext')?.addEventListener('click',()=>{
+  const step = state.view.mode==='day' ? 1 : (state.view.mode==='3day' ? 3 : 7);
+  state.view.anchor = addDays(state.view.anchor, step);
+  save();
+  renderGrid();
+});
+document.getElementById('btnToday')?.addEventListener('click',()=>{state.view.anchor=todayStr();save();renderGrid();});
 
 /* ---- MESSAGING ---- */
 function renderPlatformGrid(){const grid=document.getElementById('platformGrid');grid.innerHTML=PLATFORMS.map(p=>`<button class="platform-card" style="--pc:${p.color};border:none;background:none;cursor:pointer;" onclick="openNativeDeepLink('${(p.nativeUri||'').replace(/'/g,'&#39;')}','${p.url.replace(/'/g,'&#39;')}')"><span class="i3d i3d-md" style="${p.icc}color:#fff;"><i class="${p.icon}"></i></span><span class="pname">${p.name}</span><span class="ptype">${p.type}</span></button>`).join('');}
