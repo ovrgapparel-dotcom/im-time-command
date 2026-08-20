@@ -200,10 +200,19 @@ button{cursor:pointer;}
 .event-block.selected{box-shadow:0 0 0 2.5px #F59E0B,0 8px 24px rgba(0,0,0,.85) !important;z-index:10 !important;transform:scale(1.015);}
 .event-block.lifted{box-shadow:0 14px 36px rgba(59,130,246,.6) !important;z-index:20 !important;transform:scale(1.04);border-style:dashed !important;}
 .event-block:active{cursor:grabbing;}
-.event-block .t{font-size:.63rem;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.event-block .t{font-size:.63rem;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px;}
 .event-block .tm{font-size:.56rem;opacity:.85;}
 .event-block .resize-handle{position:absolute;left:0;right:0;bottom:0;height:8px;cursor:ns-resize;}
 .event-block.dragging{opacity:.5;}
+.touch-drag-handle{position:absolute;top:2px;right:3px;font-size:.6rem;color:rgba(255,255,255,.7);padding:2px 3px;border-radius:4px;cursor:grab;z-index:5;touch-action:none;}
+.touch-drag-handle:hover{color:#fff;background:rgba(255,255,255,.25);}
+
+/* Instant Popover Action Menu on Single Tap */
+.event-quick-popover{position:absolute;top:-33px;left:50%;transform:translateX(-50%);background:#0b0f19;border:1px solid var(--border-strong);border-radius:20px;padding:2px 5px;display:flex;align-items:center;gap:3px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.9);animation:popin .15s ease-out;white-space:nowrap;}
+@keyframes popin{from{transform:translateX(-50%) scale(0.8);opacity:0;}to{transform:translateX(-50%) scale(1);opacity:1;}}
+.eqp-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;transition:all .12s;}
+.eqp-btn:hover{background:var(--blue);border-color:var(--blue);}
+.eqp-btn.eqp-del:hover{background:var(--red);border-color:var(--red);}
 .drag-ghost{position:absolute;left:3px;right:3px;border-radius:7px;border:2px dashed rgba(255,255,255,.4);background:rgba(255,255,255,.04);pointer-events:none;z-index:5;}
 .help-note{font-size:.7rem;color:var(--text-mute);line-height:1.5;padding:.55rem 1.1rem .75rem;border-top:1px solid var(--border);}
 
@@ -1083,6 +1092,7 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
     <p class="sub">Profile · Integrations · Notifications</p>
     <div class="settings-tabs">
       <button class="active" data-stab="profile">Profile</button>
+      <button data-stab="touch"><i class="fa-solid fa-hand-pointer"></i> Touch &amp; Gestures</button>
       <button data-stab="integrations">Integrations</button>
       <button data-stab="notifications">Notifications</button>
     </div>
@@ -1103,6 +1113,47 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
           <option value="ja">🇯🇵 日本語 (Japanese)</option>
           <option value="ar">🇸🇦 العربية (Arabic)</option>
         </select>
+      </div>
+    </div>
+    <div id="settingsTabTouch" style="display:none;">
+      <div class="api-setup-card" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.25);">
+        <b style="color:var(--gold);"><i class="fa-solid fa-sliders" style="margin-right:.3rem;"></i>Touch Screen &amp; Mobile Sensitivity Settings</b><br>
+        Adjust hold-to-drag timing, double-tap speed, and visual drag handles for your smartphone or tablet.
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Hold-to-Drag Delay (Long-Press Sensitivity)</label>
+          <select id="setHoldDelay">
+            <option value="200">⚡ Fast (~200ms) — Very Responsive</option>
+            <option value="350" selected>⚡ Standard (~350ms) — Recommended</option>
+            <option value="500">🌱 Relaxed (~500ms) — Prevents Accidental Holds</option>
+            <option value="disabled">🚫 Disabled (Drag via Grip Handle Only)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Double-Tap Speed Threshold</label>
+          <select id="setDoubleTapSpeed">
+            <option value="250">⚡ Quick (~250ms)</option>
+            <option value="350" selected>⚡ Standard (~350ms)</option>
+            <option value="500">🌱 Easy (~500ms) — More Forgiving</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top:.4rem;">
+        <div class="field">
+          <label>Visual Touch Drag Handle on Event Cards</label>
+          <select id="setShowHandle">
+            <option value="on" selected>Show Grip Handle (Top-Right Icon)</option>
+            <option value="off">Hide Grip Handle</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Single-Tap Quick Actions Bar</label>
+          <select id="setShowQuickActionBar">
+            <option value="on" selected>Show Instant Popover (Edit / Copy / Delete)</option>
+            <option value="off">Hide Popover Bar</option>
+          </select>
+        </div>
       </div>
     </div>
     <div id="settingsTabIntegrations" style="display:none;">
@@ -1553,9 +1604,9 @@ async function sendGmailMessage(to,subject,body,threadId){
 
 /* ---- DEFAULT STATE ---- */
 const DEFAULT_GEMINI_KEY = '';
-function defaultState(){return{profile:{name:'',business:'',primaryTz:Intl.DateTimeFormat().resolvedOptions().timeZone||'America/New_York',level:'starter',xp:0,joinDate:todayStr()},clocks:[],events:[],trackerActivities:[],completedMilestones:[],completedTasks:[],customMilestoneTasks:[],portfolioPieces:[],hub:{masterCal:'',cal15:'',cal30:''},settings:{lead:15,notif:'on',geminiKey:DEFAULT_GEMINI_KEY,gmailClientId:''},gmail:null,view:{mode:'week',anchor:todayStr()},onboarded:false};}
+function defaultState(){return{profile:{name:'',business:'',primaryTz:Intl.DateTimeFormat().resolvedOptions().timeZone||'America/New_York',level:'starter',xp:0,joinDate:todayStr()},clocks:[],events:[],trackerActivities:[],completedMilestones:[],completedTasks:[],customMilestoneTasks:[],portfolioPieces:[],hub:{masterCal:'',cal15:'',cal30:''},settings:{lead:15,notif:'on',geminiKey:DEFAULT_GEMINI_KEY,gmailClientId:'',touchSensitivity:{holdDelay:350,doubleTapSpeed:350,showHandle:'on',showPopover:'on'}},gmail:null,view:{mode:'week',anchor:todayStr()},onboarded:false};}
 let state=null;
-function load(){try{const r=localStorage.getItem(LS_KEY);if(r)state=JSON.parse(r);}catch(e){}if(!state)state=defaultState();['trackerActivities','portfolioPieces','completedMilestones','completedTasks','customMilestoneTasks'].forEach(k=>{if(!state[k])state[k]=[];});if(!state.settings)state.settings={lead:15,notif:'on',geminiKey:DEFAULT_GEMINI_KEY,gmailClientId:''};if(!state.hub)state.hub={masterCal:'',cal15:'',cal30:''};if(!state.view)state.view={mode:'week',anchor:todayStr()};}
+function load(){try{const r=localStorage.getItem(LS_KEY);if(r)state=JSON.parse(r);}catch(e){}if(!state)state=defaultState();['trackerActivities','portfolioPieces','completedMilestones','completedTasks','customMilestoneTasks'].forEach(k=>{if(!state[k])state[k]=[];});if(!state.settings)state.settings={lead:15,notif:'on',geminiKey:DEFAULT_GEMINI_KEY,gmailClientId:'',touchSensitivity:{holdDelay:350,doubleTapSpeed:350,showHandle:'on',showPopover:'on'}};if(!state.settings.touchSensitivity)state.settings.touchSensitivity={holdDelay:350,doubleTapSpeed:350,showHandle:'on',showPopover:'on'};if(!state.hub)state.hub={masterCal:'',cal15:'',cal30:''};if(!state.view)state.view={mode:'week',anchor:todayStr()};}
 function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
 function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
 load();
@@ -1817,6 +1868,13 @@ document.getElementById('btnSettings').addEventListener('click',()=>{
   if(document.getElementById('setNotifChannel')) document.getElementById('setNotifChannel').value=state.settings.notifChannel||state.settings.notif||'whatsapp';
   if(document.getElementById('setGeminiKey')) document.getElementById('setGeminiKey').value=state.settings.geminiKey||'';
   if(document.getElementById('setGmailClientId')) document.getElementById('setGmailClientId').value=state.settings.gmailClientId||'';
+
+  const touchConfig = state.settings.touchSensitivity || { holdDelay: 350, doubleTapSpeed: 350, showHandle: 'on', showPopover: 'on' };
+  if(document.getElementById('setHoldDelay')) document.getElementById('setHoldDelay').value = String(touchConfig.holdDelay);
+  if(document.getElementById('setDoubleTapSpeed')) document.getElementById('setDoubleTapSpeed').value = String(touchConfig.doubleTapSpeed);
+  if(document.getElementById('setShowHandle')) document.getElementById('setShowHandle').value = touchConfig.showHandle || 'on';
+  if(document.getElementById('setShowQuickActionBar')) document.getElementById('setShowQuickActionBar').value = touchConfig.showPopover || 'on';
+
   document.getElementById('settingsOverlay').classList.add('show');
 });
 document.getElementById('btnSaveSettings').addEventListener('click',()=>{
@@ -1832,7 +1890,15 @@ document.getElementById('btnSaveSettings').addEventListener('click',()=>{
   if(document.getElementById('setNotifChannel')) state.settings.notifChannel=document.getElementById('setNotifChannel').value;
   if(document.getElementById('setGeminiKey')) state.settings.geminiKey=document.getElementById('setGeminiKey').value.trim();
   if(document.getElementById('setGmailClientId')) state.settings.gmailClientId=document.getElementById('setGmailClientId').value.trim();
-  save();document.getElementById('settingsOverlay').classList.remove('show');renderAll();initGmailOAuth();toast('Saved','Settings updated.','success');
+
+  state.settings.touchSensitivity = {
+    holdDelay: document.getElementById('setHoldDelay')?.value || '350',
+    doubleTapSpeed: document.getElementById('setDoubleTapSpeed')?.value || '350',
+    showHandle: document.getElementById('setShowHandle')?.value || 'on',
+    showPopover: document.getElementById('setShowQuickActionBar')?.value || 'on'
+  };
+
+  save();document.getElementById('settingsOverlay').classList.remove('show');renderAll();initGmailOAuth();toast('Saved','Touch sensitivity & Settings updated.','success');
 });
 
 /* ---- CLOCK STRIP ---- */
@@ -2599,8 +2665,11 @@ function renderGrid(){
       const isDiffTz = evTz !== state.profile.primaryTz;
       const tzBadge = isDiffTz ? `<span class="ev-tz-badge" title="Event set in ${friendlyTz(evTz)} (${ev.start}–${ev.end})">${tzAbbr(evTz, startUtc)}</span>` : '';
       
+      const touchConfig = state.settings.touchSensitivity || { holdDelay: 350, doubleTapSpeed: 350, showHandle: 'on', showPopover: 'on' };
+      const handleHtml = touchConfig.showHandle !== 'off' ? `<i class="fa-solid fa-grip-lines touch-drag-handle" title="Touch & Drag"></i>` : '';
+
       block.title = `${ev.title}\nYour Time (${tzAbbr(state.profile.primaryTz, startUtc)}): ${startZ.time}–${endZ.time}\nEvent TZ (${tzAbbr(evTz, startUtc)}): ${ev.start}–${ev.end}`;
-      block.innerHTML=`<div class="t">${escapeHtml(ev.title)} ${tzBadge}</div><div class="tm">${startZ.time}–${endZ.time}${ev.link?` · <i class="fa-solid fa-video" style="font-size:.52rem;"></i>`:''}${ev.repeat?.type!=='none'?' ↻':''}</div><div class="resize-handle"></div>`;
+      block.innerHTML=`${handleHtml}<div class="t">${escapeHtml(ev.title)} ${tzBadge}</div><div class="tm">${startZ.time}–${endZ.time}${ev.link?` · <i class="fa-solid fa-video" style="font-size:.52rem;"></i>`:''}${ev.repeat?.type!=='none'?' ↻':''}</div><div class="resize-handle"></div>`;
       body.appendChild(block);
       wireEventBlock(block,ev);
     });
@@ -2698,11 +2767,17 @@ function wireDayBodyDrag(body){
 function wireEventBlock(block,ev){
   let mode=null, startY=0, origTop=0, origH=0, startBody=null;
   let lastTapTime=0, longPressTimer=null, touchStartPos={x:0, y:0}, isLongPressActive=false;
-  const handle=block.querySelector('.resize-handle');
 
-  // Single Tap Selection & Double Tap Open Handler
+  const handle = block.querySelector('.resize-handle');
+  const touchGrip = block.querySelector('.touch-drag-handle');
+  const touchConfig = state.settings.touchSensitivity || { holdDelay: 350, doubleTapSpeed: 350, showHandle: 'on', showPopover: 'on' };
+  const holdDelayMs = touchConfig.holdDelay === 'disabled' ? 999999 : Number(touchConfig.holdDelay || 350);
+  const doubleTapMs = Number(touchConfig.doubleTapSpeed || 350);
+
+  // Single Tap Selection & Popover Action Bar + Double Tap Open Handler
   block.addEventListener('click', (e)=>{
     e.stopPropagation();
+    if(e.target.closest('.eqp-btn') || e.target.closest('.touch-drag-handle')) return;
     if(block.classList.contains('dragging') || isLongPressActive){
       isLongPressActive = false;
       return;
@@ -2710,12 +2785,18 @@ function wireEventBlock(block,ev){
     const now = Date.now();
     const timeSinceLastTap = now - lastTapTime;
 
-    // Single Tap: Select & Highlight ring
+    // Single Tap: Focus & Show Popover Action Bar
     document.querySelectorAll('.event-block.selected').forEach(b=>b.classList.remove('selected'));
+    document.querySelectorAll('.event-quick-popover').forEach(p=>p.remove());
     block.classList.add('selected');
 
-    // Double Tap (within 350ms): Open Event Modal!
-    if(timeSinceLastTap > 0 && timeSinceLastTap < 350){
+    if(touchConfig.showPopover !== 'off'){
+      showEventQuickPopover(block, ev);
+    }
+
+    // Double Tap (within customizable doubleTapMs): Open Event Modal!
+    if(timeSinceLastTap > 0 && timeSinceLastTap < doubleTapMs){
+      document.querySelectorAll('.event-quick-popover').forEach(p=>p.remove());
       openEventModal(ev);
       lastTapTime = 0;
     } else {
@@ -2723,7 +2804,22 @@ function wireEventBlock(block,ev){
     }
   });
 
-  // Pointerdown handler with 350ms Long Press timer for drag initiation
+  // Dedicated grip handle pointerdown for immediate touch dragging
+  if(touchGrip){
+    touchGrip.addEventListener('pointerdown', (e)=>{
+      e.stopPropagation();
+      mode = 'move';
+      startY = e.clientY;
+      origTop = parseFloat(block.style.top);
+      origH = parseFloat(block.style.height);
+      startBody = block.parentElement;
+      block.classList.add('dragging', 'lifted');
+      if(navigator.vibrate) navigator.vibrate([40]);
+      try{ block.setPointerCapture(e.pointerId); }catch(err){}
+    });
+  }
+
+  // Pointerdown handler with customizable Hold-to-Drag timer
   block.addEventListener('pointerdown', e=>{
     if(e.target===handle){
       mode='resize';
@@ -2734,30 +2830,32 @@ function wireEventBlock(block,ev){
       e.stopPropagation();
       return;
     }
+    if(e.target.closest('.touch-drag-handle')) return;
 
     touchStartPos = { x: e.clientX, y: e.clientY };
     isLongPressActive = false;
 
-    // 350ms Tap and Hold (Long Press) to initiate dragging
-    longPressTimer = setTimeout(()=>{
-      isLongPressActive = true;
-      mode = 'move';
-      startY = e.clientY;
-      origTop = parseFloat(block.style.top);
-      origH = parseFloat(block.style.height);
-      startBody = block.parentElement;
+    if(touchConfig.holdDelay !== 'disabled'){
+      longPressTimer = setTimeout(()=>{
+        isLongPressActive = true;
+        mode = 'move';
+        startY = e.clientY;
+        origTop = parseFloat(block.style.top);
+        origH = parseFloat(block.style.height);
+        startBody = block.parentElement;
 
-      block.classList.add('dragging', 'lifted');
-      if(navigator.vibrate) navigator.vibrate([40]);
+        block.classList.add('dragging', 'lifted');
+        if(navigator.vibrate) navigator.vibrate([40]);
+        toast('✋ Dragging Active', `Moving "${ev.title}" across target slots`, 'info');
 
-      try{ block.setPointerCapture(e.pointerId); }catch(err){}
-    }, 350);
+        try{ block.setPointerCapture(e.pointerId); }catch(err){}
+      }, holdDelayMs);
+    }
 
     e.stopPropagation();
   });
 
   block.addEventListener('pointermove', e=>{
-    // Cancel long press if user moves pointer > 8px before 350ms timer (allows smooth page scrolling)
     if(longPressTimer){
       const dist = Math.hypot(e.clientX - touchStartPos.x, e.clientY - touchStartPos.y);
       if(dist > 8 && !isLongPressActive){
@@ -2840,6 +2938,41 @@ function wireEventBlock(block,ev){
   block.addEventListener('pointerup', endPointer);
   block.addEventListener('pointercancel', endPointer);
 }
+
+function showEventQuickPopover(block, ev){
+  document.querySelectorAll('.event-quick-popover').forEach(p => p.remove());
+  const popover = document.createElement('div');
+  popover.className = 'event-quick-popover';
+  popover.innerHTML = `
+    <button class="eqp-btn" onclick="event.stopPropagation();openEventModal(state.events.find(x=>x.id==='${ev.id}'))"><i class="fa-solid fa-pen"></i> Edit</button>
+    <button class="eqp-btn" onclick="event.stopPropagation();quickCopyEvent('${ev.id}')"><i class="fa-solid fa-copy"></i> Copy</button>
+    <button class="eqp-btn eqp-del" onclick="event.stopPropagation();quickDeleteEvent('${ev.id}')"><i class="fa-solid fa-trash"></i></button>
+  `;
+  block.appendChild(popover);
+}
+
+window.quickCopyEvent = function(id){
+  const ev = state.events.find(x => x.id === id);
+  if(!ev) return;
+  const copy = JSON.parse(JSON.stringify(ev));
+  copy.id = uid();
+  copy.start = minutesToTime(minutesOf(ev.start) + 30);
+  copy.end = minutesToTime(minutesOf(ev.end) + 30);
+  state.events.push(copy);
+  save();
+  renderAll();
+  toast('Duplicated', `Copy of "${ev.title}" created.`, 'success');
+};
+
+window.quickDeleteEvent = function(id){
+  const ev = state.events.find(x => x.id === id);
+  if(!ev) return;
+  if(!confirm(`Delete "${ev.title}"?`)) return;
+  state.events = state.events.filter(x => x.id !== id);
+  save();
+  renderAll();
+  toast('Deleted', `Block removed.`, 'info');
+};
 function duplicateEvent(ev,date,start,end){const copy=JSON.parse(JSON.stringify(ev));copy.id=uid();copy.date=date;copy.start=start;copy.end=end;copy.repeat={type:'none',days:[],until:null};state.events.push(copy);save();toast('Duplicated',`Copy of "${ev.title}" created.`,'success');}
 
 /* ---- PRIORITY SHIFT HELPER ---- */
