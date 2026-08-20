@@ -921,6 +921,79 @@ select option,.qa-select option{background-color:#141722 !important;color:#FFFFF
           </div>
           <div id="composeReplies" style="margin-top:.6rem;"></div>
         </div>
+
+        <!-- Scheduled Messages & Time Zone Rollout Panel -->
+        <div class="panel" style="padding:1.2rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem;">
+            <div style="display:flex;align-items:center;gap:.55rem;">
+              <span class="i3d i3d-sm i3d-gold"><i class="fa-solid fa-clock-rotate-left"></i></span>
+              <div>
+                <h3 style="font-family:'Space Grotesk';font-size:.95rem;">Scheduled Time Zone Messages</h3>
+                <p style="font-size:.68rem;color:var(--text-mute);">Schedule messages to rollout automatically in contact time zones</p>
+              </div>
+            </div>
+            <span class="tone-badge tone-formal" id="schedMsgBadgeCount">0 Scheduled</span>
+          </div>
+
+          <!-- Schedule Form -->
+          <div style="background:var(--panel-soft);border:1px solid var(--border);padding:.85rem;border-radius:10px;margin-bottom:.85rem;">
+            <div class="field">
+              <label>Select Contact / Client</label>
+              <select id="schedContactSelect"><option value="">— Select Contact —</option></select>
+            </div>
+            <div id="schedContactTzInfo" style="font-size:.68rem;color:var(--blue);margin:-.3rem 0 .55rem;font-weight:600;"></div>
+
+            <div class="field">
+              <label>Message Content</label>
+              <textarea id="schedMsgText" placeholder="Write message or select from Smart Reply above…" style="min-height:55px;"></textarea>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label>Target Date</label>
+                <input type="date" id="schedDate">
+              </div>
+              <div class="field">
+                <label>Target Time</label>
+                <input type="time" id="schedTime" value="09:00">
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label>Time Zone Reference</label>
+                <select id="schedTzMode">
+                  <option value="contact" selected>🌍 In Contact's Time Zone</option>
+                  <option value="user">🏠 In My Primary Time Zone</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Dispatch Channel</label>
+                <select id="schedChannel">
+                  <option value="whatsapp">WhatsApp Direct DM</option>
+                  <option value="email">Email / Gmail Draft</option>
+                  <option value="messenger">Facebook Messenger</option>
+                  <option value="sms">SMS</option>
+                  <option value="inapp">In-App Pop-up Alert</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="schedTimePreviewBox" style="background:rgba(59,130,246,.08);border:1px dashed rgba(59,130,246,.3);padding:.5rem .75rem;border-radius:7px;font-size:.68rem;color:var(--text);margin-top:.4rem;line-height:1.5;">
+              <i class="fa-solid fa-calculator" style="color:var(--blue);margin-right:4px;"></i> Select a contact and time to preview dual time zone rollout schedule.
+            </div>
+
+            <button class="btn btn-primary btn-sm" id="btnScheduleMessageSubmit" style="width:100%;justify-content:center;margin-top:.65rem;">
+              <i class="fa-solid fa-calendar-plus"></i> Schedule Rollout
+            </button>
+          </div>
+
+          <!-- Queue List -->
+          <div style="font-size:.78rem;font-weight:700;margin-bottom:.45rem;display:flex;align-items:center;gap:.4rem;">
+            <i class="fa-solid fa-list-check" style="color:var(--blue);"></i> Rollout Queue
+          </div>
+          <div id="schedMessagesQueueList" style="display:flex;flex-direction:column;gap:.5rem;max-height:260px;overflow-y:auto;padding-right:2px;"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -3158,6 +3231,238 @@ document.getElementById('btnGenerateReply').addEventListener('click',async()=>{
 });
 window.copyReply=function(text){const decoded=text.replace(/&#39;/g,"'");navigator.clipboard.writeText(decoded).then(()=>toast('Copied!','Reply copied to clipboard.','success')).catch(()=>{const ta=document.createElement('textarea');ta.value=decoded;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied!','Reply copied.','success');});};
 
+/* ---- SCHEDULED TIME ZONE MESSAGES ---- */
+function populateSchedContactSelect(){
+  const sel = document.getElementById('schedContactSelect');
+  if(!sel) return;
+  const current = sel.value;
+  let html = '<option value="">— Select Contact —</option>';
+  (state.clocks || []).forEach(c => {
+    const tzLabel = friendlyTz(c.tz);
+    html += `<option value="${c.id}">${escapeHtml(c.name)} (${c.role || tzLabel}) — ${tzLabel}</option>`;
+  });
+  sel.innerHTML = html;
+  if(current) sel.value = current;
+}
+
+function updateScheduleTimePreview(){
+  const preview = document.getElementById('schedTimePreviewBox');
+  const infoEl = document.getElementById('schedContactTzInfo');
+  if(!preview) return;
+
+  const cid = document.getElementById('schedContactSelect')?.value;
+  const c = (state.clocks || []).find(x => x.id === cid);
+  const dateStr = document.getElementById('schedDate')?.value || todayStr();
+  const timeStr = document.getElementById('schedTime')?.value || '09:00';
+  const mode = document.getElementById('schedTzMode')?.value || 'contact';
+
+  if(!c){
+    if(infoEl) infoEl.textContent = '';
+    preview.innerHTML = `<i class="fa-solid fa-calculator" style="color:var(--blue);margin-right:4px;"></i> Select a contact and time to preview dual time zone rollout schedule.`;
+    return;
+  }
+
+  const contactTz = c.tz || state.profile.primaryTz;
+  const userTz = state.profile.primaryTz;
+  const now = new Date();
+
+  if(infoEl){
+    infoEl.textContent = `📍 Contact Time Zone: ${friendlyTz(contactTz)} (${tzAbbr(contactTz, now)}) · Local Contact Time Now: ${fmtClock(now, contactTz)}`;
+  }
+
+  const referenceTz = mode === 'contact' ? contactTz : userTz;
+  const targetUtc = zonedTimeToUtc(dateStr, timeStr, referenceTz);
+
+  const contactClock = fmtClock(targetUtc, contactTz);
+  const contactDate = fmtDateLabel(targetUtc, contactTz);
+  const userClock = fmtClock(targetUtc, userTz);
+  const userDate = fmtDateLabel(targetUtc, userTz);
+
+  preview.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:.25rem;">
+      <div><i class="fa-solid fa-user-clock" style="color:var(--gold);margin-right:4px;"></i><b>Recipient (${escapeHtml(c.name)} - ${tzAbbr(contactTz, targetUtc)})</b>: <b>${contactClock}</b> <small style="color:var(--text-mute);">(${contactDate})</small></div>
+      <div><i class="fa-solid fa-house-laptop" style="color:var(--blue);margin-right:4px;"></i><b>Your Local Time (${tzAbbr(userTz, targetUtc)})</b>: <b>${userClock}</b> <small style="color:var(--text-mute);">(${userDate})</small></div>
+    </div>
+  `;
+}
+
+function scheduleNewMessageFromForm(){
+  const cid = document.getElementById('schedContactSelect')?.value;
+  const c = (state.clocks || []).find(x => x.id === cid);
+  if(!c){
+    toast('Select Contact', 'Please select a contact from the list.', 'warn');
+    return;
+  }
+
+  const messageText = document.getElementById('schedMsgText')?.value.trim();
+  if(!messageText){
+    toast('Empty Message', 'Write a message to schedule.', 'warn');
+    return;
+  }
+
+  const dateStr = document.getElementById('schedDate')?.value || todayStr();
+  const timeStr = document.getElementById('schedTime')?.value || '09:00';
+  const mode = document.getElementById('schedTzMode')?.value || 'contact';
+  const channel = document.getElementById('schedChannel')?.value || 'whatsapp';
+
+  const referenceTz = mode === 'contact' ? c.tz : state.profile.primaryTz;
+  const targetUtcDate = zonedTimeToUtc(dateStr, timeStr, referenceTz);
+  const scheduledUtc = targetUtcDate.getTime();
+
+  state.scheduledMessages = state.scheduledMessages || [];
+  const newItem = {
+    id: uid(),
+    contactId: c.id,
+    contactName: c.name,
+    contactTz: c.tz,
+    messageText,
+    channel,
+    scheduledUtc,
+    targetDate: dateStr,
+    targetTime: timeStr,
+    tzMode: mode,
+    status: 'pending',
+    createdTs: Date.now()
+  };
+
+  state.scheduledMessages.push(newItem);
+  save();
+
+  document.getElementById('schedMsgText').value = '';
+  renderScheduledMessagesList();
+
+  const cTimeStr = fmtClock(targetUtcDate, c.tz);
+  const uTimeStr = fmtClock(targetUtcDate, state.profile.primaryTz);
+  toast('⏰ Scheduled Rollout Set!', `Message for ${c.name} scheduled for ${cTimeStr} (${friendlyTz(c.tz)}) / ${uTimeStr} Local.`, 'success');
+}
+
+function renderScheduledMessagesList(){
+  const wrap = document.getElementById('schedMessagesQueueList');
+  const countBadge = document.getElementById('schedMsgBadgeCount');
+  if(!wrap) return;
+
+  const queue = state.scheduledMessages || [];
+  if(countBadge) countBadge.textContent = `${queue.filter(x => x.status === 'pending').length} Scheduled`;
+
+  if(!queue.length){
+    wrap.innerHTML = `<div style="color:var(--text-mute);font-size:.72rem;padding:.4rem 0;">No messages in scheduled rollout queue.</div>`;
+    return;
+  }
+
+  const sorted = queue.slice().sort((a,b) => a.scheduledUtc - b.scheduledUtc);
+  const nowMs = Date.now();
+
+  wrap.innerHTML = sorted.map(item => {
+    const c = (state.clocks || []).find(x => x.id === item.contactId);
+    const cName = c ? c.name : item.contactName;
+    const cTz = c ? c.tz : (item.contactTz || state.profile.primaryTz);
+    const targetUtcDate = new Date(item.scheduledUtc);
+
+    const diffMin = Math.round((item.scheduledUtc - nowMs) / 60000);
+    let countdownText = '';
+    if(diffMin > 0){
+      const h = Math.floor(diffMin / 60);
+      const m = diffMin % 60;
+      countdownText = `⏳ Rolls out in ${h > 0 ? h + 'h ' : ''}${m}m`;
+    } else {
+      countdownText = `🚀 Ready for Rollout!`;
+    }
+
+    const contactTime = fmtClock(targetUtcDate, cTz);
+    const userTime = fmtClock(targetUtcDate, state.profile.primaryTz);
+
+    const statusBadge = item.status === 'dispatched' 
+      ? `<span class="tone-badge tone-friendly"><i class="fa-solid fa-check"></i> Dispatched</span>`
+      : (diffMin <= 0 ? `<span class="tone-badge tone-direct" style="background:rgba(245,158,11,.2);color:var(--gold);"><i class="fa-solid fa-bolt"></i> Ready</span>`
+      : `<span class="tone-badge tone-formal"><i class="fa-solid fa-clock"></i> Pending</span>`);
+
+    return `
+      <div style="background:var(--panel-soft);border:1px solid var(--border);border-radius:8px;padding:.65rem .8rem;font-size:.72rem;display:flex;flex-direction:column;gap:.35rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <b><i class="fa-solid fa-paper-plane" style="color:var(--cyan);margin-right:4px;"></i>${escapeHtml(cName)} (${tzAbbr(cTz, targetUtcDate)})</b>
+          ${statusBadge}
+        </div>
+        <div style="color:var(--text-dim);line-height:1.4;background:rgba(0,0,0,.2);padding:.4rem .55rem;border-radius:6px;font-style:italic;">
+          "${escapeHtml(item.messageText)}"
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;margin-top:2px;">
+          <span style="font-size:.65rem;color:var(--text-mute);">${countdownText} · (${contactTime} ${friendlyTz(cTz)} ↔ ${userTime} Local)</span>
+          <div style="display:flex;gap:.3rem;">
+            <button class="btn btn-primary btn-sm" style="padding:2px 8px;font-size:.62rem;" onclick="dispatchScheduledMessageNow('${item.id}')"><i class="fa-solid fa-paper-plane"></i> Roll Out Now</button>
+            <button class="btn btn-danger btn-sm" style="padding:2px 6px;font-size:.62rem;" onclick="deleteScheduledMessage('${item.id}')"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.dispatchScheduledMessageNow = function(id){
+  const item = (state.scheduledMessages || []).find(x => x.id === id);
+  if(!item) return;
+
+  const c = (state.clocks || []).find(x => x.id === item.contactId);
+  const cName = c ? c.name : item.contactName;
+
+  if(item.channel === 'whatsapp'){
+    const encoded = encodeURIComponent(item.messageText);
+    const waUrl = `https://api.whatsapp.com/send?text=${encoded}`;
+    window.open(waUrl, '_blank');
+    toast('📱 WhatsApp Rollout Launched', `Pre-filled message ready for ${cName}`, 'success');
+  } else if(item.channel === 'email'){
+    const mailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent('Follow Up — ' + cName)}&body=${encodeURIComponent(item.messageText)}`;
+    window.open(mailUrl, '_blank');
+    toast('✉ Email Draft Rollout Launched', `Gmail compose opened for ${cName}`, 'success');
+  } else {
+    navigator.clipboard?.writeText(item.messageText);
+    toast('📋 Message Ready & Copied', `Copied to clipboard for ${cName}`, 'success');
+  }
+
+  item.status = 'dispatched';
+  save();
+  renderScheduledMessagesList();
+};
+
+window.deleteScheduledMessage = function(id){
+  state.scheduledMessages = (state.scheduledMessages || []).filter(x => x.id !== id);
+  save();
+  renderScheduledMessagesList();
+  toast('Removed', 'Scheduled rollout message canceled.', 'info');
+};
+
+function checkPendingScheduledRollouts(){
+  if(!state?.scheduledMessages?.length) return;
+  const nowMs = Date.now();
+  let updated = false;
+
+  state.scheduledMessages.forEach(item => {
+    if(item.status === 'pending' && nowMs >= item.scheduledUtc){
+      item.status = 'ready';
+      updated = true;
+
+      const c = (state.clocks || []).find(x => x.id === item.contactId);
+      const cName = c ? c.name : item.contactName;
+
+      toast(`🚨 Rollout Time! Message for ${cName}`, `Click Roll Out Now in Messaging Hub queue to dispatch.`, 'warn');
+
+      if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    }
+  });
+
+  if(updated){
+    save();
+    renderScheduledMessagesList();
+  }
+}
+
+setInterval(checkPendingScheduledRollouts, 20000);
+
+document.getElementById('schedContactSelect')?.addEventListener('change', updateScheduleTimePreview);
+document.getElementById('schedDate')?.addEventListener('change', updateScheduleTimePreview);
+document.getElementById('schedTime')?.addEventListener('change', updateScheduleTimePreview);
+document.getElementById('schedTzMode')?.addEventListener('change', updateScheduleTimePreview);
+document.getElementById('btnScheduleMessageSubmit')?.addEventListener('click', scheduleNewMessageFromForm);
+
 /* ---- GMAIL ---- */
 function renderGmailPanel(){
   const body=document.getElementById('gmailPanelBody');const actions=document.getElementById('gmailHeaderActions');
@@ -4518,6 +4823,8 @@ function renderAll(){
   renderHubView();
   renderPlatformGrid();
   renderGmailPanel();
+  populateSchedContactSelect();
+  renderScheduledMessagesList();
   renderVaultView();
 }
 function init(){

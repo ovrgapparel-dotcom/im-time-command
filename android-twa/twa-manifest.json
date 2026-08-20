@@ -20,8 +20,8 @@
     "path": "./im_time_command.jks",
     "alias": "im_tc"
   },
-  "appVersionName": "1.1.4",
-  "appVersionCode": 16,
+  "appVersionName": "1.1.5",
+  "appVersionCode": 17,
   "shortcuts": [
     {
       "name": "Open Planner",
